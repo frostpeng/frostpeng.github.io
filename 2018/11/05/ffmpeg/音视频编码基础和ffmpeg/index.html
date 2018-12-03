@@ -1,0 +1,381 @@
+<!DOCTYPE HTML>
+<html>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  
+  <title>音视频编码基础和ffmpeg | Frost&#39;s Blog</title>
+  <meta name="author" content="frostpeng">
+  
+  <meta name="description" content="雷霄骅csdn课程学习的浓缩总结,去除了编码细节，只强调主要概念和重点工具。学习地址
+##音视频播放流程
+主要概念
+封装格式（AVI,mp4,TS,FLV,MKV,RMVB） ;
+视频编码格式(HEVC、H.264、MPEG4、MEPEG2、VP9、VP8、VC-1);
+音频编码格式（AAC，MP3">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="音视频编码基础和ffmpeg">
+  <meta property="og:site_name" content="Frost&#39;s Blog">
+
+  
+    <meta property="og:image" content="undefined">
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Frost&#39;s Blog" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="/js/jquery.min.js"></script>
+
+  
+<script type="text/javascript">
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-45019001-1', 'topdna.org');
+  ga('send', 'pageview');
+</script>
+
+
+</head>
+</html>
+
+<body>
+  <!--[if lte IE 8]> <div style=' clear: both; height: 59px; padding:0 0 0 15px; position: relative;margin:0 auto;'> <a href="http://windows.microsoft.com/en-US/internet-explorer/products/ie/home?ocid=ie6_countdown_bannercode"><img src="http://storage.ie6countdown.com/assets/100/images/banners/warning_bar_0027_Simplified Chinese.jpg" border="0" height="42" width="820" alt="You are using an outdated browser. For a faster, safer browsing experience, upgrade for free today." style='margin-left:auto;margin-right:auto;display: block;'/></a></div> <![endif]-->
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Frost&#39;s Blog</a></h1>
+  <h2><a href="/">冰霜工作室</a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">首页</a></li>
+    
+      <li><a href="/categories/tech/">技术</a></li>
+    
+      <li><a href="/categories/life/">生活</a></li>
+    
+      <li><a href="/archives">归档</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <time datetime="2018-11-05T11:11:12.000Z"><a href="/2018/11/05/ffmpeg/音视频编码基础和ffmpeg/">2018-11-05</a></time>
+      
+      
+  
+    <h1 class="title">音视频编码基础和ffmpeg</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>雷霄骅csdn课程学习的浓缩总结,去除了编码细节，只强调主要概念和重点工具。<a href="https://blog.csdn.net/leixiaohua1020/article/details/47068015" target="_blank" rel="noopener">学习地址</a></p>
+<p>##音视频播放流程<br><img src="/2018/11/05/ffmpeg/音视频编码基础和ffmpeg/a.png" alt="视频播放流程"></p>
+<h3 id="主要概念"><a href="#主要概念" class="headerlink" title="主要概念"></a>主要概念</h3><ol>
+<li>封装格式（AVI,mp4,TS,FLV,MKV,RMVB） ;</li>
+<li>视频编码格式(HEVC、H.264、MPEG4、MEPEG2、VP9、VP8、VC-1);</li>
+<li>音频编码格式（AAC，MP3等）;</li>
+<li>视频像素数据(RGB24、RGB32、YUV420P、YUV422P、YUV444P；实际视频都是用的YUV);</li>
+<li>音频采样数据（PCM无损数据）。</li>
+</ol>
+<h3 id="码率"><a href="#码率" class="headerlink" title="码率"></a>码率</h3><p>编码后一秒的数据量，低就不清晰，高就会质量好。</p>
+<p>###H.264</p>
+<ol>
+<li>序列&gt;图像(帧)&gt;片组&gt;片&gt;NALU&gt;宏块&gt;亚宏块&gt;块像素</li>
+<li>DCT-&gt;量化-&gt;帧内预测-&gt;帧间预测-&gt;熵编码-&gt;环路滤波等</li>
+<li>图像数据压缩100倍以上</li>
+</ol>
+<h3 id="AAC-：主流音频处理"><a href="#AAC-：主流音频处理" class="headerlink" title="AAC ：主流音频处理"></a>AAC ：主流音频处理</h3><p>将PCM采样音频数据压缩10倍以上。</p>
+<h3 id="RGB24大小示例"><a href="#RGB24大小示例" class="headerlink" title="RGB24大小示例"></a>RGB24大小示例</h3><p>一小时体积3600<em>25</em>1920<em>1080</em>3 = 559.9GByte<br>频率家定位25Hz，采样精度为8bit，即1个点就是8比特的数据。</p>
+<ul>
+<li>BMP就是存储的RGB格式的像素数据。</li>
+</ul>
+<h3 id="YUV"><a href="#YUV" class="headerlink" title="YUV"></a>YUV</h3><p>先存整张图片的Y信息，再存U的信息，再存V的信息，所以读取可以按一张图一张图去读<br>常用YUV420数据格式<br>4:4:4 表示4个像素点采样4个Y信息，4个Cb和4个Cr，所以整体像素点单位的3倍<br>4:2:2 代表4个像素点采样4个Y信息，2个Cb和2个Cr<br>4:2:0 表示4个像素点采样4个Y信息，横纵向各只有一个Cb/Cr，所以整体像素点单位的1.5倍，一般两个Y共用相邻的Cb和Cr。</p>
+<p>###PCM大小示例<br>4分钟的PCM<br>4<em>60</em>44100<em>2（双声道）</em>2（采样精度） = 42.3MByte<br>采样率是44100HZ常规参数，采样精度为16bit一个</p>
+<h3 id="PCM"><a href="#PCM" class="headerlink" title="PCM"></a>PCM</h3><p>如果是单声道，依次存储就好了；如果是双声道，左右声道交错存储</p>
+<h2 id="工具类"><a href="#工具类" class="headerlink" title="工具类"></a>工具类</h2><ul>
+<li>MediaInfo可以用来查看视频综合信息</li>
+<li>YUV Player可以查看视频像素数据（没有头文件，需要自己打开后在参数中指定高宽和YUV格式）</li>
+<li>视频播放器vlc、movist</li>
+<li>封装工具格式查看器 Elecard Format Analyzer</li>
+<li>视频编码格式查看器 Elecard Stream Eye</li>
+</ul>
+<p><img src="/2018/11/05/ffmpeg/音视频编码基础和ffmpeg/b.png" alt="视频编码格式查看"></p>
+<ul>
+<li>音频采样数据查看工具：Adobe Audition（没有头文件，需要自己打开后在参数中指定采样率、声道和采样精度）</li>
+</ul>
+<h2 id="ffmpeg命令行学习"><a href="#ffmpeg命令行学习" class="headerlink" title="ffmpeg命令行学习"></a>ffmpeg命令行学习</h2><ul>
+<li><a href="https://www.ffmpeg.org/ffmpeg.html" target="_blank" rel="noopener">官方文档</a></li>
+<li>样例比如ffmpeg -i input.mp4 -i logo.png -filter_complex “[1:v]scale=50:50[a];[0:v][a]overlay=0:0” output.mp4<br>将图片放到视频每一帧的左上角；</li>
+<li>ffmpeg -i stream1 -i stream2 -i zbxh1.png -filter_complex “[1:v][2:v]overlay=W-w:H-h[a];[0:v]drawbox=0:0:240:162:<a href="mailto:black@0.5" target="_blank" rel="noopener">black@0.5</a>[b];[b][a]overlay=0:0” -acodec aac -ac 1 -vcodec libx264 -deblock 0 -f flv rtmp://localhost:1935/myapp/test 把输入的视频文件换成流地址（亲测过http,rtmp,rtsp等的同种叠加和混搭），把保存的文件换成推送的地址，最后指明编码器等参数。<br>其中-deblock 0 选项是“去块效应”的，以免视频编码完成后产生块效应。</li>
+</ul>
+<h3 id="ffplay"><a href="#ffplay" class="headerlink" title="ffplay"></a>ffplay</h3><p>简单播放工具，可以学习下<a href="https://www.ffmpeg.org/ffplay.html" target="_blank" rel="noopener">官方文档</a></p>
+<p>###ffmpeg关键类库（八大金刚）</p>
+<ul>
+<li>avcodec ：编解码</li>
+<li>avformat：封装格式处理</li>
+<li>avfilter：滤镜特效处理</li>
+<li>avdevice：各种设备输入输出；</li>
+<li>avutil：工具库（大部分库都需要这个库支持）</li>
+<li>postproc：后加工</li>
+<li>swresample：音频采样数据格式转换</li>
+<li>swscale： 视频像素数据格式转换；<br>###ffmpeg解码数据结构<br><img src="/2018/11/05/ffmpeg/音视频编码基础和ffmpeg/c.png" alt="解码数据结构"></li>
+</ul>
+<ul>
+<li>AVFormatContext 最外层封装结构上下文；<ul>
+<li>iformat 输入视频的 AVInputFormat</li>
+<li>nb_streams 流数量</li>
+<li>streams 流的数组</li>
+<li>duration：时长</li>
+<li>bit_rate ：码率</li>
+</ul>
+</li>
+<li>AVInputFormat指明封装格式<ul>
+<li>name 封装格式名称</li>
+<li>long_name:封装格式的长名称</li>
+<li>extensions：封装格式扩展名</li>
+<li>id：封装格式ID </li>
+</ul>
+</li>
+<li>AVStream主要是视频流和音频流，0一般是视频流，1为音频流<ul>
+<li>id序号</li>
+<li>codec：流对应 AVCodecContext</li>
+<li>time_base:该流的时基础，记录时间播放的基数，比如1s</li>
+<li>r_frame_rate：1s有多少画面</li>
+</ul>
+</li>
+<li>AVCodecContext 处理编解码上下文<ul>
+<li>codec：编解码的     AVCodec</li>
+<li>width、height</li>
+<li>pix_fmt：像素格式（针对视频）</li>
+</ul>
+</li>
+<li>AVCodec 解码格式解码器<ul>
+<li>name</li>
+<li>long_name</li>
+<li>type</li>
+<li>id     </li>
+</ul>
+</li>
+</ul>
+<h4 id="基础数据结构"><a href="#基础数据结构" class="headerlink" title="基础数据结构"></a>基础数据结构</h4><p>AVPacket(解码前压缩数据)-&gt;AVFrame（解码后的数据）</p>
+<h5 id="AVPacket"><a href="#AVPacket" class="headerlink" title="AVPacket"></a>AVPacket</h5><ul>
+<li>pts：显示时间戳，只能是整数，单位是对应的时间基数AVStream的time_base；</li>
+<li>dts：解码时间戳（解码顺序和显示顺序不一样）</li>
+<li>data：压缩编码数据</li>
+<li>size：压缩编码数据大小</li>
+<li>stream_index:所属的AVStream</li>
+</ul>
+<h5 id="AVFrame"><a href="#AVFrame" class="headerlink" title="AVFrame"></a>AVFrame</h5><ul>
+<li>data：解码后的图像数据（音频采样数据）</li>
+<li>linesize：对视频是图像一行像素大小，对音频是整个音频帧大小</li>
+<li>width、height（专用于视频）</li>
+<li>key_frame：是否是关键帧（只对视频有用）</li>
+<li>pict_type:帧类型（I、P、B专用于视频）</li>
+</ul>
+<h5 id="sws-scale"><a href="#sws-scale" class="headerlink" title="sws_scale"></a>sws_scale</h5><p>这是解码最后的一步，解码出来之后不是最终的分辨率，比如原本480X320，输出520X480，需要进行裁剪去除黑边。</p>
+<h2 id="SDL（Simple-DirectMedia-Layer）视频显示"><a href="#SDL（Simple-DirectMedia-Layer）视频显示" class="headerlink" title="SDL（Simple DirectMedia Layer）视频显示"></a>SDL（Simple DirectMedia Layer）视频显示</h2><ul>
+<li>封装复杂音视频底层交互，简化音视频处理难度。</li>
+<li>跨平台、开源</li>
+<li>主要用于做游戏的<br>SDL架构图<br><img src="/2018/11/05/ffmpeg/音视频编码基础和ffmpeg/d.png" alt="SDL架构图"><br>SDL流程图<br><img src="/2018/11/05/ffmpeg/音视频编码基础和ffmpeg/e.png" alt="SDL流程图"></li>
+</ul>
+<p>###核心结构<br><img src="/2018/11/05/ffmpeg/音视频编码基础和ffmpeg/f.png" alt="SDL视频数据结构图"></p>
+
+      
+    </div>
+    <footer>
+      
+
+        
+          <div class="alignleft post-nav">
+            <em>上一篇: </em><a href="/2018/12/01/http/http2.0改造/">图片下载支持http2.0改造方案关键点</a>
+          </div>
+        
+        
+          <div class="alignright post-nav">
+            <em>下一篇: </em><a href="/2016/05/08/减包/利用Eclipse JDT减少方法数和包大小/">利用Eclipse JDT减少方法数和包大小</a>
+          </div>
+          <div class="clearfix"></div>
+        
+
+        
+          <div class="copyright">
+            
+              <span class="claim">版权声明：自由转载-非商用-无演绎-保持署名 @ Creative Commons BY-NC-ND 3.0</span>
+            
+            
+              <span class="from-link">
+                <em>本文链接地址:</em>
+                <a href="/2018/11/05/ffmpeg/音视频编码基础和ffmpeg/">
+                  http://frostpeng.github.io/2018/11/05/ffmpeg/音视频编码基础和ffmpeg/
+                </a>
+              </span>
+            
+          </div>
+        
+        
+  
+  <div class="categories">
+    <a href="/categories/tech/">tech</a>
+  </div>
+
+        
+  
+  <div class="tags">
+    <a href="/tags/ffmpeg/">ffmpeg</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+    
+    
+      <a class="addthis_button_sinaweibo_like"></a>
+    
+    
+      <a class="addthis_button_linkedin"></a>
+    
+    
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+<section id="comment">
+  <h1 class="title">留言</h1>
+
+  
+      <div id="fb-root"></div>
+<script>
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=123456789012345";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<div class="fb-comments" data-href="http://frostpeng.github.io/2018/11/05/ffmpeg/音视频编码基础和ffmpeg/index.html" data-num-posts="5" data-width="840" data-colorscheme="light"></div>
+      
+  
+</section>
+
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="text" name="q" results="0" placeholder="搜一下">
+    <i class="icon-search"></i>
+    <input type="hidden" name="q" value="site:frostpeng.github.io">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">标签</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/android/">android</a><small>3</small></li>
+  
+    <li><a href="/tags/ffmpeg/">ffmpeg</a><small>2</small></li>
+  
+    <li><a href="/tags/http2-0/">http2.0</a><small>1</small></li>
+  
+    <li><a href="/tags/减包/">减包</a><small>2</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">分类</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/tech/">tech</a><small>6</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">最新文章</h3>
+  <ul class="entry">
+    
+      <li>
+        <a href="/2018/12/01/ffmpeg/《ffmpeg从入门到精通》关键点/">《ffmpeg从入门到精通》关键点</a>
+      </li>
+    
+      <li>
+        <a href="/2018/12/01/http/http2.0改造/">图片下载支持http2.0改造方案关键点</a>
+      </li>
+    
+      <li>
+        <a href="/2018/11/05/ffmpeg/音视频编码基础和ffmpeg/">音视频编码基础和ffmpeg</a>
+      </li>
+    
+      <li>
+        <a href="/2016/05/08/减包/利用Eclipse JDT减少方法数和包大小/">利用Eclipse JDT减少方法数和包大小</a>
+      </li>
+    
+      <li>
+        <a href="/2016/05/02/减包/分析Dalvik字节码进行减包优化/">分析Dalvik字节码进行减包优化</a>
+      </li>
+    
+      <li>
+        <a href="/2015/12/24/内存泄漏/leakcanary/">LeakCanary分析详解</a>
+      </li>
+    
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <div id="go-pg-top"><i class="icon-arrow-up"></i></div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2018 frostpeng
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.2.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/page.js"></script>
+
+
+</body>
+
+</html>

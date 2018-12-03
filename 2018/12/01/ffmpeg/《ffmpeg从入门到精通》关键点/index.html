@@ -1,0 +1,389 @@
+<!DOCTYPE HTML>
+<html>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  
+  <title>《ffmpeg从入门到精通》关键点 | Frost&#39;s Blog</title>
+  <meta name="author" content="frostpeng">
+  
+  <meta name="description" content="###ffmpeg学习(学习时是4.1版本)豆瓣阅读购买电子书（ffmpeg从入门到精通 https://read.douban.com/ebook/49786757/）
+####简介（Fast Forward 和 Moving Picture Experts Group）
+
+音视频编解码工具和编解">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="《ffmpeg从入门到精通》关键点">
+  <meta property="og:site_name" content="Frost&#39;s Blog">
+
+  
+    <meta property="og:image" content="undefined">
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Frost&#39;s Blog" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="/js/jquery.min.js"></script>
+
+  
+<script type="text/javascript">
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-45019001-1', 'topdna.org');
+  ga('send', 'pageview');
+</script>
+
+
+</head>
+</html>
+
+<body>
+  <!--[if lte IE 8]> <div style=' clear: both; height: 59px; padding:0 0 0 15px; position: relative;margin:0 auto;'> <a href="http://windows.microsoft.com/en-US/internet-explorer/products/ie/home?ocid=ie6_countdown_bannercode"><img src="http://storage.ie6countdown.com/assets/100/images/banners/warning_bar_0027_Simplified Chinese.jpg" border="0" height="42" width="820" alt="You are using an outdated browser. For a faster, safer browsing experience, upgrade for free today." style='margin-left:auto;margin-right:auto;display: block;'/></a></div> <![endif]-->
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Frost&#39;s Blog</a></h1>
+  <h2><a href="/">冰霜工作室</a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">首页</a></li>
+    
+      <li><a href="/categories/tech/">技术</a></li>
+    
+      <li><a href="/categories/life/">生活</a></li>
+    
+      <li><a href="/archives">归档</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <time datetime="2018-12-01T11:11:12.000Z"><a href="/2018/12/01/ffmpeg/《ffmpeg从入门到精通》关键点/">2018-12-01</a></time>
+      
+      
+  
+    <h1 class="title">《ffmpeg从入门到精通》关键点</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>###ffmpeg学习(学习时是4.1版本)<br>豆瓣阅读购买电子书（ffmpeg从入门到精通 <a href="https://read.douban.com/ebook/49786757/）" target="_blank" rel="noopener">https://read.douban.com/ebook/49786757/）</a></p>
+<p>####简介（Fast Forward 和 Moving Picture Experts Group）</p>
+<ol>
+<li>音视频编解码工具和编解码开发套件；</li>
+<li>提供多种媒体格式的封装和解封装，包括多种音视频编码，多种协议流媒体、多种色彩格式转换、多种采样率转换、多种码率转换等，提供了丰富的插件模式，包含封装、解封装、编码解码插件。</li>
+<li>出名的开源社区引用：ijkplayer、ffmpeg2theora、VLC、MPlayer等，是在 LGPL/GPL 协议 下发布的(如果使用了 GPL 协议发布的模块则必须采用 GPL 协议)，任何人都可以自由使 用，但必须严格遵守 LGPL/GPL 协议 。</li>
+</ol>
+<p>####组成</p>
+<ol>
+<li>包含AVFormat、 AVCodec、 AVFilter、 AVDevice、 AVUtil 等 模块库；<ul>
+<li>AVFormat 用于媒体封装格式处理，包括文件MP4、FLV等格式和RTMP等网络协议封装格式，可以自定义对应的封装格式支持能力；</li>
+<li>AVCodec 用于编解码格式支持处理，默认支持MPEG4、AAC等自带媒体编码，还支持第三方的编解码器，比如H.264用x264编码器，H.265用x265；</li>
+<li>AVFilter 用于通用的音视频、字幕等滤镜处理框架;</li>
+<li>swscale主要用于高级别的图像转换api，常用于视频从1080p转换为720P等缩放；</li>
+<li>swresample 音频重采样API，操作音频采样、音频通道布局转换和布局调整。</li>
+</ul>
+</li>
+<li>ffplay用来播放，系统需要有SDL来支撑播放，ffplay提供了音视频显示和播放相关的图像信息，音频的波形信息等。</li>
+<li>ffprobe用于分析多媒体文件，从中获取你想要了解的媒体信息。</li>
+<li><p>ffmpeg源码中可以用：</p>
+<ul>
+<li>configure –help查看所需要的第三方外部库和对应的支持编译参数；</li>
+<li>configure –list-encoders、configure –list-decoders可以用来查看编译支持的编解码器；</li>
+<li>configure –list–muxers、configure –list–demuxers可以用来查看支持的封装和解封装 容器格式；</li>
+<li>configure –list-protocols可以查看支持的流媒体协议。</li>
+<li>./configure  –prefix=/usr/local –enable-gpl –enable-libx264 –enable-libass –enable-ffplay  –extra-cflags=”-Os -fpic -I/Users/frostpeng/privateWorkspace/ffmpeg/x264/include $ADDI_CFLAGS” –extra-ldflags=”-L/Users/frostpeng/privateWorkspace/ffmpeg/x264/lib $ADDI_LDFLAGS “ 支持h264和ffplay编译ffmpeg–enable-libass用来支持字幕</li>
+</ul>
+</li>
+<li><p>ffmpeg –help可以查看常规的命令，包括公共操作参数部分、文件主要操作参数、视频操作参数、音频操作参数和字母操作参数;</p>
+<ul>
+<li>ffmpeg –help看的是基础信息;</li>
+<li>ffmpeg –help long 可以获得高级参数部分;</li>
+<li>ffmpeg –help full 可以获得全部帮助信息;</li>
+</ul>
+</li>
+<li>ffmpeg常用命令<ul>
+<li>ffmpeg-formats查看支持的视频文件格式;</li>
+<li>ffmpeg -version查看库版本;</li>
+<li>ffmpeg -L查看协议;</li>
+<li>ffmpeg -codecs查看编解码支持;</li>
+<li>ffmpeg -encoders和-decoders查看编解码器支持;</li>
+<li>ffmpeg -filters可以查看支持的滤镜；</li>
+<li>ffmpeg -h 支持查看具体demuxer、muxer、encoder、decoder等操作参数（比如ffmpeg-h muxer=flv）；</li>
+<li>ffmpeg -h filter=colorkey 、ffmpeg-h decoder=h264 等方式查看详细参数</li>
+<li>非常有用比如ffmpeg -h encoder=libx264 可以查看libx264在ffmpeg编码中支持的参数调整；</li>
+<li>H264的解码可以分为常规、多线程（多线程可以分为帧级别多线程和slice级别多线程）；</li>
+<li>ffmpeg –help full的AVFormatContext参数部分，用于说明封装转换可使用的参数；</li>
+<li>ffmpeg –help full的AVCodecContext参数部分，用于说明编解码可使用的参数；</li>
+</ul>
+</li>
+<li>ffprobe常用命令<ul>
+<li>ffprobe–help可以查看详细帮助信息；</li>
+<li>ffprobe ffmpeg yuvviewer streameye mp4info 都可以用来查看媒体信息</li>
+<li>ffprobe -show_packets input.flv 查看多媒体数据包信息，一般显示很长段的数据</li>
+<li>ffprobe -show_data -show_packets input.flv 组合查看包的具体数据，一般显示很长段的数据</li>
+<li>ffprobe -show_format input.flv 可以查看多媒体封装格式</li>
+<li>ffprobe -show_frames input.flv 查看视频文件具体帧信息</li>
+<li>ffprobe -show_streams input.flv 查看视频文件流信息</li>
+<li>ffprobe支持key-value格式的显示方式，如果想要格式化的现实，可以用ffprobe -print_format 或者ffprobe -of参数来进行对应输出，print_format支持多种格式包括xml、json、ini、csv（可以用作Excel展示）、flat等，比如ffprobe -of xml -show_streams input.flv   ；ffprobe -of json -show_streams input.flv;</li>
+<li>ffprobe -show_frames -select_streams v -of xml input.mp4 可以用select_streams选择展示的流，v视频/a音频/s字幕</li>
+</ul>
+</li>
+<li>ffplay常用命令<ul>
+<li>ffplay –help查看全部参数</li>
+<li>ffplay -ss 30 -t 10 input.mp4 播放ss设置起点，t表示播放多久，相当于播放30s开始，播放10s文件；</li>
+<li>ffplay -window_title “Hello World, This is a sample” output.mp4 设置播放器标题</li>
+<li>ffplay -window_title “播放测试”  rtmp://up.v.test.com/live/stream 可以打开网络直播流</li>
+<li>time ffplay -window_title “Hello World” -ss 20 -t 10 -autoexit output.mp4 通过time查看命令运行时长</li>
+<li>ffplay -window_title “Test Movie” -vf “subtitles=input.srt” output.mp4 通过filter指定字幕</li>
+<li>ffplay -showmode 1 output.mp3 可视化查看音频波形</li>
+<li>ffplay -flags2 +export_mvs -ss 40 output.mp4 -vf codecview=mv=pf+bf+bb 可以查看运动估计显示的图形</li>
+</ul>
+</li>
+</ol>
+<h4 id="ffmpeg转封装"><a href="#ffmpeg转封装" class="headerlink" title="ffmpeg转封装"></a>ffmpeg转封装</h4><ol>
+<li>mp4的格式信息，主要理解Box和FullBox的概念。moov视频头放在mdat前后都可以，但是网络视频为了尽快播放，一般放在前面。</li>
+<li>mp4分析工具Elecard StreamEye、mp4box、mp4info等</li>
+<li>./ffmpeg -i input.flv -c copy -f mp4 -movflags faststart output.mp4 正常情况下ffmpeg生成moov是在mdat写完成之后再写入，可以通过参数faststart将moov容器移动至mdat的前面；</li>
+<li>FLV也是一种常见格式，注意FLVTAG的概念，主要分为FLV文件头和文件内容。FLV有自己支持的视频编码和音频编码列表，不支持的编码封装时会报错。</li>
+<li>M3U8 是以文件列表形式存在的支持直播、点播的流媒体格式；</li>
+</ol>
+<h4 id="ffmpeg软硬件编码"><a href="#ffmpeg软硬件编码" class="headerlink" title="ffmpeg软硬件编码"></a>ffmpeg软硬件编码</h4><p>目前已经在学习，主要也是各平台的H264编解码相关内容，没啥大的需要查漏补缺的。gpu编码优化这方面可以考虑在工作中应用。</p>
+<h4 id="ffmpeg-流媒体"><a href="#ffmpeg-流媒体" class="headerlink" title="ffmpeg 流媒体"></a>ffmpeg 流媒体</h4><ul>
+<li>目前直播大多数是RTMP、HTTP+FLV、HLS、DASH等方式；</li>
+<li>包含RTMP、HTTP、RTSP等流媒体协议分析；</li>
+<li>了解一次编码、多路输出的操作方式，一次视频推多路直播平台；</li>
+<li>介绍HDS和DASH切片方式的直播支持；</li>
+<li>RTMP常用于实时直播。</li>
+<li>RTSP曾主要用于直播，如今广泛用于安防。</li>
+</ul>
+<p>#####RTSP协议细节</p>
+<ul>
+<li>可以通过TCP 、UDP、HTTP隧道实现。</li>
+<li>UDP容易出现拉流丢包异常，在实时性和可靠性适中时，可以考虑采用TCP方式拉流；</li>
+<li>UDP容易丢包导致花屏、绿屏、灰屏、马赛克等问题；</li>
+</ul>
+<p>#####HTTP细节</p>
+<ul>
+<li>直播和点播都可以用HTTP，ffmpeg就可以用做播放器，也可以用来当服务器；</li>
+<li>http拉流录制和转封装，http传输的flv可以录制为HLS（M3U8）、MP4、FLV等。</li>
+</ul>
+<h5 id="UDP和TCP流媒体"><a href="#UDP和TCP流媒体" class="headerlink" title="UDP和TCP流媒体"></a>UDP和TCP流媒体</h5><ul>
+<li>常用于裸传输场景</li>
+</ul>
+<h5 id="推流和拉流"><a href="#推流和拉流" class="headerlink" title="推流和拉流"></a>推流和拉流</h5><ul>
+<li>拉流表示从服务器获取视频数据到客户端播放；</li>
+<li>推流表示从主播端将视频上传到服务器；</li>
+</ul>
+<h5 id="ffmpeg推多路流"><a href="#ffmpeg推多路流" class="headerlink" title="ffmpeg推多路流"></a>ffmpeg推多路流</h5><ul>
+<li>使用管道方式输出多路流和使用tee进行多路流输出；</li>
+<li>使用管道方式推多路流可以一次编码，多次输出支持所得到的流；</li>
+<li><p>使用tee方式</p>
+<pre><code>./ffmpeg -re -i input.mp4 -vcodec libx264 -acodec aac -f flv &quot;tee:rtmp://publish.chinaffmpeg.com/live/stream1|rtmp://publish.chinaffmpeg.com/live/stream2&quot;
+</code></pre></li>
+<li>一次编码，输出两个字链接的tee协议，输出两路RTMP流。</li>
+</ul>
+<h5 id="ffmpeg-生成HDS流"><a href="#ffmpeg-生成HDS流" class="headerlink" title="ffmpeg 生成HDS流"></a>ffmpeg 生成HDS流</h5><ul>
+<li>ffmpeg支持文件列表方式的切片直播、点播流，除了HLS外，还支持HDS流切片格式。</li>
+</ul>
+<h5 id="ffmpeg-生成DASH"><a href="#ffmpeg-生成DASH" class="headerlink" title="ffmpeg 生成DASH"></a>ffmpeg 生成DASH</h5><ul>
+<li>也是列表方式的直播。</li>
+</ul>
+<h4 id="ffmpeg-滤镜使用"><a href="#ffmpeg-滤镜使用" class="headerlink" title="ffmpeg 滤镜使用"></a>ffmpeg 滤镜使用</h4><p>FFmpeg功能强大的主要原因是其包含了滤镜处理avfilter，FFmpeg的avfilter能够实现的音频、视频、字幕渲染效果数不胜数，并且时至今日还在不断地增加新的功能，除了本章介绍的内容之外，还可以从FFmpeg官方网站的文档页面获得FFmpeg的avfilter更多的信息。</p>
+<h4 id="ffmpeg-采集设备"><a href="#ffmpeg-采集设备" class="headerlink" title="ffmpeg 采集设备"></a>ffmpeg 采集设备</h4><p>我们可以了解到Linux、OS X、Windows上的设备采集方式，内容涉及fbdev、v4l2、x11grab、avfoundation、dshow、vfwcap、gdigrab等。</p>
+<p>###总评<br>除了熟悉下命令行，其余价值很低，配不上从入门到精通这种名字，因为没法精通</p>
+
+      
+    </div>
+    <footer>
+      
+
+        
+        
+          <div class="alignright post-nav">
+            <em>下一篇: </em><a href="/2018/12/01/http/http2.0改造/">图片下载支持http2.0改造方案关键点</a>
+          </div>
+          <div class="clearfix"></div>
+        
+
+        
+          <div class="copyright">
+            
+              <span class="claim">版权声明：自由转载-非商用-无演绎-保持署名 @ Creative Commons BY-NC-ND 3.0</span>
+            
+            
+              <span class="from-link">
+                <em>本文链接地址:</em>
+                <a href="/2018/12/01/ffmpeg/《ffmpeg从入门到精通》关键点/">
+                  http://frostpeng.github.io/2018/12/01/ffmpeg/《ffmpeg从入门到精通》关键点/
+                </a>
+              </span>
+            
+          </div>
+        
+        
+  
+  <div class="categories">
+    <a href="/categories/tech/">tech</a>
+  </div>
+
+        
+  
+  <div class="tags">
+    <a href="/tags/ffmpeg/">ffmpeg</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+    
+    
+      <a class="addthis_button_sinaweibo_like"></a>
+    
+    
+      <a class="addthis_button_linkedin"></a>
+    
+    
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+<section id="comment">
+  <h1 class="title">留言</h1>
+
+  
+      <div id="fb-root"></div>
+<script>
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=123456789012345";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<div class="fb-comments" data-href="http://frostpeng.github.io/2018/12/01/ffmpeg/《ffmpeg从入门到精通》关键点/index.html" data-num-posts="5" data-width="840" data-colorscheme="light"></div>
+      
+  
+</section>
+
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="text" name="q" results="0" placeholder="搜一下">
+    <i class="icon-search"></i>
+    <input type="hidden" name="q" value="site:frostpeng.github.io">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">标签</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/android/">android</a><small>3</small></li>
+  
+    <li><a href="/tags/ffmpeg/">ffmpeg</a><small>2</small></li>
+  
+    <li><a href="/tags/http2-0/">http2.0</a><small>1</small></li>
+  
+    <li><a href="/tags/减包/">减包</a><small>2</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">分类</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/tech/">tech</a><small>6</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">最新文章</h3>
+  <ul class="entry">
+    
+      <li>
+        <a href="/2018/12/01/ffmpeg/《ffmpeg从入门到精通》关键点/">《ffmpeg从入门到精通》关键点</a>
+      </li>
+    
+      <li>
+        <a href="/2018/12/01/http/http2.0改造/">图片下载支持http2.0改造方案关键点</a>
+      </li>
+    
+      <li>
+        <a href="/2018/11/05/ffmpeg/音视频编码基础和ffmpeg/">音视频编码基础和ffmpeg</a>
+      </li>
+    
+      <li>
+        <a href="/2016/05/08/减包/利用Eclipse JDT减少方法数和包大小/">利用Eclipse JDT减少方法数和包大小</a>
+      </li>
+    
+      <li>
+        <a href="/2016/05/02/减包/分析Dalvik字节码进行减包优化/">分析Dalvik字节码进行减包优化</a>
+      </li>
+    
+      <li>
+        <a href="/2015/12/24/内存泄漏/leakcanary/">LeakCanary分析详解</a>
+      </li>
+    
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <div id="go-pg-top"><i class="icon-arrow-up"></i></div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2018 frostpeng
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.2.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/page.js"></script>
+
+
+</body>
+
+</html>

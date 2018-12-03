@@ -1,0 +1,417 @@
+<!DOCTYPE HTML>
+<html>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  
+  <title>图片下载支持http2.0改造方案关键点 | Frost&#39;s Blog</title>
+  <meta name="author" content="frostpeng">
+  
+  <meta name="description" content="iOS结合版在手Q6.7.0版本已经上线了http2.0下的图片下载的改造，取得了比较好的效果；Android结合版7.2.0 也针对图片下载做了http2.0的相关改造，简单输出下方案。
+###支持版本相对于iOS必须在9.0以上版本才支持http2.0，Android侧需要5.0以上版本才能很好">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="图片下载支持http2.0改造方案关键点">
+  <meta property="og:site_name" content="Frost&#39;s Blog">
+
+  
+    <meta property="og:image" content="undefined">
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Frost&#39;s Blog" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="/js/jquery.min.js"></script>
+
+  
+<script type="text/javascript">
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-45019001-1', 'topdna.org');
+  ga('send', 'pageview');
+</script>
+
+
+</head>
+</html>
+
+<body>
+  <!--[if lte IE 8]> <div style=' clear: both; height: 59px; padding:0 0 0 15px; position: relative;margin:0 auto;'> <a href="http://windows.microsoft.com/en-US/internet-explorer/products/ie/home?ocid=ie6_countdown_bannercode"><img src="http://storage.ie6countdown.com/assets/100/images/banners/warning_bar_0027_Simplified Chinese.jpg" border="0" height="42" width="820" alt="You are using an outdated browser. For a faster, safer browsing experience, upgrade for free today." style='margin-left:auto;margin-right:auto;display: block;'/></a></div> <![endif]-->
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Frost&#39;s Blog</a></h1>
+  <h2><a href="/">冰霜工作室</a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">首页</a></li>
+    
+      <li><a href="/categories/tech/">技术</a></li>
+    
+      <li><a href="/categories/life/">生活</a></li>
+    
+      <li><a href="/archives">归档</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <time datetime="2018-12-01T11:11:12.000Z"><a href="/2018/12/01/http/http2.0改造/">2018-12-01</a></time>
+      
+      
+  
+    <h1 class="title">图片下载支持http2.0改造方案关键点</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>iOS结合版在手Q6.7.0版本已经上线了http2.0下的图片下载的改造，取得了比较好的效果；Android结合版7.2.0 也针对图片下载做了http2.0的相关改造，简单输出下方案。</p>
+<p>###支持版本<br>相对于iOS必须在9.0以上版本才支持http2.0，Android侧需要5.0以上版本才能很好的支持ALPN(http2.0的协商协议，Android4.4到5.0之间有bug，SPDY使用的是NPN)的实现。<br>目前手q外网Android 5.0以上占比77.53%，加入版本控制即可。</p>
+<p>###网络库的选择</p>
+<p>####Httpclient VS HttpUrlConnection VS OKHttp</p>
+<ul>
+<li><p>Httpclient<br>目前是结合版downloader使用的网络库，主要是因为历史兼容性的考虑。google官方已经不推荐使用，Android6.0之后HttpClient是不是系统自带的了，不过它在最近的更新中将HttpClient的所有代码copy了一份进来，所以还能使用。目前也不太好支持http2.0/SPDY。</p>
+</li>
+<li><p>Httpurlconnection<br>从Android4.4起内部实现已经变成了OkHttp，但是默认当前版本spdy/http2.0是被禁用掉的。</p>
+<pre><code>https://android.googlesource.com/platform/external/okhttp/+/master/android/main/java/com/squareup/okhttp/HttpsHandler.java
+OkUrlFactory okUrlFactory = HttpHandler.createHttpOkUrlFactory(proxy);
+// All HTTPS requests are allowed.
+okUrlFactory.setUrlFilter(null);
+OkHttpClient okHttpClient = okUrlFactory.client();
+// Only enable HTTP/1.1 (implies HTTP/1.0). Disable SPDY / HTTP/2.0.
+okHttpClient.setProtocols(HTTP_1_1_ONLY);
+okHttpClient.setConnectionSpecs(Collections.singletonList(TLS_CONNECTION_SPEC));
+</code></pre></li>
+<li><p>OKHttp<br>Android官方实现用于替代HttpUrlConnection和Apache HttpClient,相关下载接口和原有的结合版DownLoader兼容难度比较小，支持spdy/http2.0，本身的连接池复用，gzip压缩，缓存响应数据等技术都比较成熟，目前手Q 已经有使用OKHttp2.5的jar包，可以适当改造，包大小的压力会小很多。</p>
+</li>
+</ul>
+<h3 id="当前相册后台方案"><a href="#当前相册后台方案" class="headerlink" title="当前相册后台方案"></a>当前相册后台方案</h3><h4 id="只支持Https-之前没有spdy的改造"><a href="#只支持Https-之前没有spdy的改造" class="headerlink" title="只支持Https,之前没有spdy的改造"></a>只支持Https,之前没有spdy的改造</h4><p>虽然http2.0可以支持明文传输，但是现在主流的浏览器，客户端，服务端主要还是支持的基于TLS部署的http2.0协议，目前结合版相册图片下载的服务器也只能支持TLS下的http2.0。下载结合版相册图片时必须用https访问才能走http2.0协议。</p>
+<p>###主要改造点</p>
+<p>####IP直连下的SNI<br>因为目前的http2.0的实现是基于https的访问，之前Downloader实现的https是不会走IP直连策略的，现在希望提高https访问性能，需要使用IP直连策略。默认情况下IP直连无法通过证书校验，主要是因为传输的domain并没有使用Header中的域名host，而是直接用的IP，所以会出现domain不匹配的情况，导致SSL/TLS握手不成功。这里通过修改OKHttp创建SSLSocket的实现，将IP直接替换成原来的域名，再进行证书校验，就可以实现IP直连下的HTTPS访问。</p>
+<pre><code>  //okhttp/src/main/java/com/squareup/okhttp/Connection.java
+  // Create the wrapper over the connected socket.
+sslSocket = (SSLSocket) sslSocketFactory.createSocket(
+        socket, address.getUriHost(), address.getUriPort(), true /* autoClose */);
+try {
+  sslSocket.setEnabledProtocols(new String[]{&quot;TLSv1&quot;, &quot;TLSv1.1&quot;, &quot;TLSv1.2&quot;});
+}catch(Exception e){
+}
+ConnectionSpec connectionSpec = connectionSpecSelector.configureSecureSocket(sslSocket);
+String currentHost=address.getUriHost();
+if (connectionSpec.supportsTlsExtensions()) {
+//对比address的header中的host和url中的host，如果发现不一致，即ip直连，则sni host设置为header中的host
+  if(address.headerHost!=null &amp;&amp; address.headerHost!=&quot;&quot;&amp;&amp; !address.headerHost.equals(currentHost)){
+    currentHost=address.headerHost;
+  }
+  //sni host设置，不然无法通过校验
+  Platform.get().configureTlsExtensions(
+          sslSocket, currentHost, address.getProtocols());
+}
+
+// Force handshake. This can throw!
+sslSocket.startHandshake();
+</code></pre><p>####30X重定向访问<br>Downloader的处理逻辑，重定向后header中仍然会保留之前的host域名，服务器会因为header中保留的之前的host域名和url中的host不一致而出错，这里需要修改OKHttp源码来实现。</p>
+<pre><code>//okhttp/src/main/java/com/squareup/okhttp/internal/http/HttpEngine.java
+ case HTTP_MULT_CHOICE:
+      case HTTP_MOVED_PERM:
+      case HTTP_MOVED_TEMP:
+      case HTTP_SEE_OTHER:
+        // Does the client allow redirects?
+        if (!client.getFollowRedirects()) return null;
+
+        String location = userResponse.header(&quot;Location&quot;);
+        if (location == null) return null;
+        HttpUrl url = userRequest.httpUrl().resolve(location);
+
+        // Don&apos;t follow redirects to unsupported protocols.
+        if (url == null) return null;
+
+        // If configured, don&apos;t follow redirects between SSL and non-SSL.
+        boolean sameScheme = url.scheme().equals(userRequest.httpUrl().scheme());
+        if (!sameScheme &amp;&amp; !client.getFollowSslRedirects()) return null;
+
+        // Redirects don&apos;t include a request body.
+        Request.Builder requestBuilder = userRequest.newBuilder();
+        if (HttpMethod.permitsRequestBody(userRequest.method())) {
+          requestBuilder.method(&quot;GET&quot;, null);
+          requestBuilder.removeHeader(&quot;Transfer-Encoding&quot;);
+          requestBuilder.removeHeader(&quot;Content-Length&quot;);
+          requestBuilder.removeHeader(&quot;Content-Type&quot;);
+        }
+        if (!sameConnection(url)) {
+  //修改原有的直连30X问题，一旦碰到30x的问题，先把header中的host移除
+  requestBuilder.removeHeader(&quot;Host&quot;);
+  requestBuilder.removeHeader(&quot;Authorization&quot;);
+}
+</code></pre><p>####线程池并发策略<br>Downloader因为历史原因一直使用的两个并发下载，http2.0相比http1.1的优势主要体现在多路复用上，这里需要逻辑中的资源锁，将http2.0情况下的并发提高到4。 对比iOS的策略是http1.1并发数系统限制最多为4，http2.0后放开并发数到6。</p>
+<p>####多并发情况下OKHttp同一域名创建多个http2.0连接问题<br>OKHttp 2.5本身存在同一时间发起多个同一域名下的请求时会出现多个socket连接，这里的原因是因为第一个请求发起后，创建相应连接后加入连接池需要很短的时间，第二个请求同时发起，无法在连接池中找到可以复用的连接，所以会创建多个连接。<br>这里的解决方案是直接给创建连接并加入连接池加锁，避免同一时间同时创建多个连接。</p>
+<pre><code>//okhttp/src/main/java/com/squareup/okhttp/internal/http/HttpEngine.java
+//防止多线程请求http2.0创建多个连接，因为创建connection不一定立马加入了pool，必须获取完立马塞到pool中，别的线程一定能获取到全部最新的连接池
+    if(address !=null &amp;&amp; address.getSslSocketFactory()!=null &amp;&amp;
+            client.getProtocols()!=null &amp;&amp; client.getProtocols().contains(Protocol.HTTP_2)) {
+      synchronized (client.getConnectionPool()) {
+        connection = createNextConnection();
+        Internal.instance.connectAndSetOwner(client, connection, this, networkRequest);
+      }
+    }else{
+      connection = createNextConnection();
+      Internal.instance.connectAndSetOwner(client, connection, this, networkRequest);
+    }
+</code></pre><h4 id="TLS完全握手改简短握手"><a href="#TLS完全握手改简短握手" class="headerlink" title="TLS完全握手改简短握手"></a>TLS完全握手改简短握手</h4><p><img src="http://i.imgur.com/VrZTzVb.jpg" alt="完全握手"><br><img src="http://i.imgur.com/8eoAn5v.png" alt="简短握手"></p>
+<ul>
+<li>iOS采用的是SSLSession ID的复用策略，Android采用的是SSLSession Ticket的策略。session Ticket的服用方式可以减少TLS握手的RTT次数，减少耗时。</li>
+<li><p>两者区别在于Session ticket较之Session ID优势在于服务器使用了负载均衡等技术的时候。Session ID往往是存储在一台服务器上，当我向不同的服务器请求的时候，就无法复用之前的加密参数信息，而Session ticket可以较好的解决此类问题，因为相关的加密参数信息交由客户端管理，服务器只要确认即可。</p>
+<pre><code>//okhttp/src/main/java/com/squareup/okhttp/internal/Platform.java
+//通过反射调用setUseSessionTickets为true，启用SSLSession Ticket复用
+@Override public void configureTlsExtensions(
+       SSLSocket sslSocket, String hostname, List&lt;Protocol&gt; protocols) {
+     // Enable SNI and session tickets.
+     if (hostname != null) {
+       setUseSessionTickets.invokeOptionalWithoutCheckedException(sslSocket, true);
+       setHostname.invokeOptionalWithoutCheckedException(sslSocket, hostname);
+     }
+
+     // Enable ALPN.
+     if (setAlpnProtocols != null &amp;&amp; setAlpnProtocols.isSupported(sslSocket)) {
+       Object[] parameters = { concatLengthPrefixed(protocols) };
+       setAlpnProtocols.invokeWithoutCheckedException(sslSocket, parameters);
+     }
+   }
+</code></pre></li>
+</ul>
+<h3 id="优化和测试数据分析"><a href="#优化和测试数据分析" class="headerlink" title="优化和测试数据分析"></a>优化和测试数据分析</h3><h4 id="http2-0-VS-http1-0"><a href="#http2-0-VS-http1-0" class="headerlink" title="http2.0 VS http1.0"></a>http2.0 VS http1.0</h4><p>####劣势</p>
+<ul>
+<li>https比http慢 空间相册的http2.0是基于https实现的，这里会增加TLS的握手和加解密耗时，可以参考我下图的数据。</li>
+</ul>
+<p>####优势</p>
+<ul>
+<li>并发数增加，连接数减少 http2.0 每个IP只建立一个tcp连接，通过虚拟流的方式来并发发送http请求，RFC7540 建议协议实现者支持最大流并发数不小于 100。 而 http1.1 一般通过创建多个连接来实现并发请求，创建连接对服务器和客户端都有资源消耗，连接数一般都比较小，这里iOS改造前是4个并发，Android改造前是2个并发。iOS调整为http2.0后会使用6个并发，Android在http2.0情况下使用4个并发。</li>
+<li>TLS Session复用</li>
+<li>头部压缩 索引表算法可以相比gzip等方式更有效率，相册请求头部内容较少，影响比较小。</li>
+<li>无队首阻塞 http2.0 的流都是通过一个个小的二进制帧在 tcp 连接上发送，不同流的帧互不影响，所以无 http1.1 的队首阻塞。</li>
+<li>TCP连接竞争 多个tcp连接之间会互相竞争，影响对应的tcp慢启动时间，对于拥塞和丢包恢复速度快。</li>
+<li>https更安全，防止数据被挟持破坏。</li>
+</ul>
+<p>####未使用的特性</p>
+<ul>
+<li>优先级设置</li>
+<li>服务器主动推送</li>
+</ul>
+<p>###实验数据<br>使用腾讯云WeTestWifi下载100张相册图片，对比http,https，http2.0的下载时间。</p>
+<p>####时间指标说明</p>
+<ul>
+<li>总耗时(平均每次) 表示从第一个任务加入队列到最后一个任务下载完成的总时间/下载文件数;</li>
+<li>等待时长(平均每次) 表示每个任务从加入队列到任务执行的平均等待时间；</li>
+<li>执行时长(平均每次) 表示每个任务从开始执行到下载完成的时间（写入文件的时间去除）;</li>
+<li>请求时长(平均每次) 包括创建连接，发出请求，读取response头部的时间；</li>
+<li>response读时长(平均每次) 表示读取response文件流的时间；<br>####实验数据<br><a href="https://docs.google.com/spreadsheets/d/1x9gANKCzJkn0lZTg7J1yno2N9uxoSo-zgvPUr94DqbE/edit#gid=0" target="_blank" rel="noopener">https://docs.google.com/spreadsheets/d/1x9gANKCzJkn0lZTg7J1yno2N9uxoSo-zgvPUr94DqbE/edit#gid=0</a><br><img src="http://i.imgur.com/GjpuqbW.png" alt="实验数据"><h4 id="结论分析："><a href="#结论分析：" class="headerlink" title="结论分析："></a>结论分析：</h4>优化效果图如下<br><img src="http://i.imgur.com/hbUakan.png" alt="实验数据"></li>
+<li>1.https确实影响了下载速度，TLS握手和加解密数据会导致同并发下的https/http2.0比http1.1慢很多； 参考同并发下得https和http1.1的对比可以看出TLS会增加耗时。</li>
+<li>2.http2.0提高并发后相比https/http1.1优势很明显； 参考图中任意网络延迟下的蓝色区域数据。</li>
+<li>3.同一并发下，网络延迟高的情况下，http2.0相比https/http1.1的优势反而会减少； 参考同并发下网络延迟为200/400ms的时候，http2.0甚至比https还要慢。</li>
+<li>4.具有并发数优势的http2.0相比http1.1在网络延迟高的情况下表现更优。 参考200/400ms延迟情况下，http2.0和http1.1并发分别为2,4的对比数据，延迟很高，但是优化的效果越好。<h3 id="外网结合版720数据"><a href="#外网结合版720数据" class="headerlink" title="外网结合版720数据"></a>外网结合版720数据</h3><img src="/2018/12/01/http/http2.0改造/720数据.png" alt="结合版720外网数据"></li>
+<li>下载总耗时提升比较明显，外网提升11.34%左右；</li>
+<li>成功率有所下降，分析原因是因为遍历网络策略调整的问题，结合版725已经做了部分优化来提高下载成功率，理论上成功率应该持平甚至有所优化；</li>
+<li>下载总耗时（包含等待时间）的优化效果和iOS的20%以上有差距，原因暂时定位是iOS的并发数wifi下提高到6，非wifi提高到4，而Android目前是统一从2提高到4，有所差距。<br>##后续计划</li>
+<li>1.目前手q的OKhttp版本2.5.0相对较老，对于http2.0的支持存在一些bug，比如刚才的多个socket连接的问题，新版在相关策略上有所优化，后续会考虑升级版本；</li>
+<li>2.目前是使用的httpclient和OKhttp做的ABtest的方案，OKhttp相对httpclient也有很多细节上的优化，可以考虑全部切换到OKhttp，对于包大小和耗时应该都能有所优化；</li>
+<li>3.持续分析外网的下载数据，提高对应的成功率和下载耗时；</li>
+</ul>
+
+      
+    </div>
+    <footer>
+      
+
+        
+          <div class="alignleft post-nav">
+            <em>上一篇: </em><a href="/2018/12/01/ffmpeg/《ffmpeg从入门到精通》关键点/">《ffmpeg从入门到精通》关键点</a>
+          </div>
+        
+        
+          <div class="alignright post-nav">
+            <em>下一篇: </em><a href="/2018/11/05/ffmpeg/音视频编码基础和ffmpeg/">音视频编码基础和ffmpeg</a>
+          </div>
+          <div class="clearfix"></div>
+        
+
+        
+          <div class="copyright">
+            
+              <span class="claim">版权声明：自由转载-非商用-无演绎-保持署名 @ Creative Commons BY-NC-ND 3.0</span>
+            
+            
+              <span class="from-link">
+                <em>本文链接地址:</em>
+                <a href="/2018/12/01/http/http2.0改造/">
+                  http://frostpeng.github.io/2018/12/01/http/http2.0改造/
+                </a>
+              </span>
+            
+          </div>
+        
+        
+  
+  <div class="categories">
+    <a href="/categories/tech/">tech</a>
+  </div>
+
+        
+  
+  <div class="tags">
+    <a href="/tags/http2-0/">http2.0</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+    
+    
+      <a class="addthis_button_sinaweibo_like"></a>
+    
+    
+      <a class="addthis_button_linkedin"></a>
+    
+    
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+<section id="comment">
+  <h1 class="title">留言</h1>
+
+  
+      <div id="fb-root"></div>
+<script>
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=123456789012345";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<div class="fb-comments" data-href="http://frostpeng.github.io/2018/12/01/http/http2.0改造/index.html" data-num-posts="5" data-width="840" data-colorscheme="light"></div>
+      
+  
+</section>
+
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="text" name="q" results="0" placeholder="搜一下">
+    <i class="icon-search"></i>
+    <input type="hidden" name="q" value="site:frostpeng.github.io">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">标签</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/android/">android</a><small>3</small></li>
+  
+    <li><a href="/tags/ffmpeg/">ffmpeg</a><small>2</small></li>
+  
+    <li><a href="/tags/http2-0/">http2.0</a><small>1</small></li>
+  
+    <li><a href="/tags/减包/">减包</a><small>2</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">分类</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/tech/">tech</a><small>6</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">最新文章</h3>
+  <ul class="entry">
+    
+      <li>
+        <a href="/2018/12/01/ffmpeg/《ffmpeg从入门到精通》关键点/">《ffmpeg从入门到精通》关键点</a>
+      </li>
+    
+      <li>
+        <a href="/2018/12/01/http/http2.0改造/">图片下载支持http2.0改造方案关键点</a>
+      </li>
+    
+      <li>
+        <a href="/2018/11/05/ffmpeg/音视频编码基础和ffmpeg/">音视频编码基础和ffmpeg</a>
+      </li>
+    
+      <li>
+        <a href="/2016/05/08/减包/利用Eclipse JDT减少方法数和包大小/">利用Eclipse JDT减少方法数和包大小</a>
+      </li>
+    
+      <li>
+        <a href="/2016/05/02/减包/分析Dalvik字节码进行减包优化/">分析Dalvik字节码进行减包优化</a>
+      </li>
+    
+      <li>
+        <a href="/2015/12/24/内存泄漏/leakcanary/">LeakCanary分析详解</a>
+      </li>
+    
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <div id="go-pg-top"><i class="icon-arrow-up"></i></div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2018 frostpeng
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.2.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/page.js"></script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,378 @@
+<!DOCTYPE HTML>
+<html>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  
+  <title>利用Eclipse JDT减少方法数和包大小 | Frost&#39;s Blog</title>
+  <meta name="author" content="frostpeng">
+  
+  <meta name="description" content="在尝试了 去除变量初始化赋值冗余代码 的方式减包后，团队减包压力依旧很大。参考了手Q团队提出的减方法数的建议后，我想到了将原有代码的private方法/变量变成package方法/变量的方案来减小包大小，主要是通过Eclipse JDT分析java语法树，不修改本地代码，只是在项目代码构建过程中动态">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="利用Eclipse JDT减少方法数和包大小">
+  <meta property="og:site_name" content="Frost&#39;s Blog">
+
+  
+    <meta property="og:image" content="undefined">
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Frost&#39;s Blog" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="/js/jquery.min.js"></script>
+
+  
+<script type="text/javascript">
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-45019001-1', 'topdna.org');
+  ga('send', 'pageview');
+</script>
+
+
+</head>
+</html>
+
+<body>
+  <!--[if lte IE 8]> <div style=' clear: both; height: 59px; padding:0 0 0 15px; position: relative;margin:0 auto;'> <a href="http://windows.microsoft.com/en-US/internet-explorer/products/ie/home?ocid=ie6_countdown_bannercode"><img src="http://storage.ie6countdown.com/assets/100/images/banners/warning_bar_0027_Simplified Chinese.jpg" border="0" height="42" width="820" alt="You are using an outdated browser. For a faster, safer browsing experience, upgrade for free today." style='margin-left:auto;margin-right:auto;display: block;'/></a></div> <![endif]-->
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Frost&#39;s Blog</a></h1>
+  <h2><a href="/">冰霜工作室</a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">首页</a></li>
+    
+      <li><a href="/categories/tech/">技术</a></li>
+    
+      <li><a href="/categories/life/">生活</a></li>
+    
+      <li><a href="/archives">归档</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <time datetime="2016-05-08T06:11:12.000Z"><a href="/2016/05/08/减包/利用Eclipse JDT减少方法数和包大小/">2016-05-08</a></time>
+      
+      
+  
+    <h1 class="title">利用Eclipse JDT减少方法数和包大小</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>在尝试了 <a href="/2016/05/02/减包/分析Dalvik字节码进行减包优化/">去除变量初始化赋值冗余代码</a> 的方式减包后，团队减包压力依旧很大。参考了手Q团队提出的减方法数的建议后，我想到了将原有代码的private方法/变量变成package方法/变量的方案来减小包大小，主要是通过Eclipse JDT分析java语法树，不修改本地代码，只是在项目代码构建过程中动态修改java代码，从而减小包大小。最终效果是减少包大小150k左右，并且不会影响手Q本身代码的行数以及代码的可维护性，缺点是会增加项目代码构建的时间，目前是50s左右。很遗憾，最后手Q基础团队因为方案会增加构建时间的缺陷，没有采用。本篇文章主要是介绍去除private的思路以及用Eclipse JDT来实现构建过程中动态修改代码。</p>
+<p>ps：手Q整个项目都是在RDM平台上构建的，每次构建之前都会将revert并update到最新版本，所以我才会提出在构建时动态修改java代码，可以避免修改工程本地的代码，private直接去除会给项目开发人员带来不便。</p>
+<p>##手Q提出的减Android方法数的建议<br>手Q团队很早就提出了<a href="http://www.iteye.com/topic/1142147" target="_blank" rel="noopener">减少Android方法数的建议</a>的方案，其中针对private的建议如下：</p>
+<h3 id="避免在内部类中访问外部类的私有方法-变量"><a href="#避免在内部类中访问外部类的私有方法-变量" class="headerlink" title="避免在内部类中访问外部类的私有方法/变量"></a>避免在内部类中访问外部类的私有方法/变量</h3><p>当在java内部类（包括内部匿名类）中访问外部类的私有方法/变量时，编译器会生成额外的方法，这也会增加方法数，建议编码时尽量避免。<br>这里是java编译器对内部类的处理方式决定的，为了让内部类能够访问外部类的数据成员，java编译器会为外部类自动生成 static Type access$iii(Outer); 方法，供内部类调用。</p>
+<h2 id="将private方法-变量变成package"><a href="#将private方法-变量变成package" class="headerlink" title="将private方法/变量变成package"></a>将private方法/变量变成package</h2><p>参考手Q减少方法数的建议，将java原有的private方法/变量改成package，可以避免因内部类访问外部类私有方法/变量使得编译器产生额外的方法，从而减少包大小，减少方法数。该方案相对于将private变成public权限等其它方案实现起来简单，出现问题几率较小。</p>
+<p>##常见问题与解答</p>
+<p>###问题1：同一个包名下的类继承关系会导致private移除后出现方法重载失败。以及 同一个包名下的类继承关系会导致private移除后出现访问权限错误。<br>方式是通过Eclipse JDT将源代码解析成AST（抽象语法树，Abstract SyntaxTree可以用来分析代码）的语法树结构，记录了同一个包名下的方法名，如果出现同名，就不会去移除对应的private，保证了程序的鲁棒性，不会产生因重载失败和private导致构建失败的问题。</p>
+<p>###问题2：移除private可能导致代码行数变化，不便外网追踪问题。<br>方式是通过Eclipse JDT分析对应的语法树，通过patch的方式去修改代码，从而只是移除private，而不会导致代码行数变化，外网如果出现问题，还是可以根据代码行数追踪问题。</p>
+<p>###问题3：移除private是否影响反射。<br>否，private本身就是需要通过getDeclaredMethod 以及getDeclaredField来反射获取值的，改成package不需要调整获取方式。</p>
+<p>###问题4：包名相同的jar包和工程代码，如果出现问题1中的private的继承问题，怎么办？。<br>目前没办法处理，因为AST只能分析java代码，没法分析和调整java字节码，方案是有缺陷的，会导致问题。但是一旦出问题，就会构建失败，也很容易发现问题的原因。</p>
+<p>###问题5：将private变成package，代码不会难看么？<br>手Q整个项目都是在RDM平台上构建的，每次构建之前都会将代码revert并update到最新版本。基于JDT在构建时动态修改java代码，本地代码不会变化，还是有private，只是在编译时动态修改，实现减包大小和方法数。</p>
+<p>##Eclipse JDT的使用<br>AST（Abstract Syntax Tree，抽象语法树）经常被用于语法分析，实现涉及到编译原理底层的东西。AST使用树状结构表示源代码的抽象语法结构，可以用于代码分析，重构等方面。很多工具尤其是编译器，都会自动将源代码转换为AST，不同的工具实现方式和定义不一样。其中Eclipse使用的就是Eclipse JDT的方式对java代码进行分析。</p>
+<p>利用Eclipse JDT可以把java源代码变成AST抽象语法树，方便分析java类的的方法，变量等，也可以修改对应代码。入门文档可以参考<a href="http://blog.csdn.net/flying881114/article/details/6187061" target="_blank" rel="noopener">Eclipse JDT–AST入门</a>、<a href="http://blog.csdn.net/lovelion/article/details/18953869" target="_blank" rel="noopener">AST与ASTView简介</a>以及<a href="http://blog.csdn.net/lovelion/article/details/19050155" target="_blank" rel="noopener">AST的获取与访问</a>。<br>网上的相应资料比较少，大致列举如上这些就可以有些粗略的了解了。这些文档可以让你对AST的语法树，Eclipse JDT对AST的访问方式（包括ASTNode和ASTVisitor两种形式的访问方式）有些深入的了解。</p>
+<p>##关键代码逻辑</p>
+<p>###通过patch的方式去修改代码，以免改动代码行数</p>
+<pre><code>private static final Map&lt;String, String&gt; formatterOptions = DefaultCodeFormatterConstants.getEclipseDefaultSettings();
+static {
+    formatterOptions.put(JavaCore.COMPILER_COMPLIANCE, JavaCore.VERSION_1_7);
+    formatterOptions.put(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, JavaCore.VERSION_1_7);
+    formatterOptions.put(JavaCore.COMPILER_SOURCE, JavaCore.VERSION_1_7);
+    formatterOptions.put(DefaultCodeFormatterConstants.FORMATTER_TAB_CHAR, JavaCore.SPACE);
+    formatterOptions.put(DefaultCodeFormatterConstants.FORMATTER_TAB_SIZE, &quot;2&quot;);
+    //指定代码每行代码最大字数，如果修改代码，会使单行代码变长会影响代码行数。
+    formatterOptions.put(DefaultCodeFormatterConstants.FORMATTER_LINE_SPLIT, &quot;200&quot;);
+    formatterOptions.put(DefaultCodeFormatterConstants.FORMATTER_JOIN_LINES_IN_COMMENTS, DefaultCodeFormatterConstants.FALSE);
+    // change the option to wrap each enum constant on a new line
+    formatterOptions.put(
+        DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_ENUM_CONSTANTS,
+        DefaultCodeFormatterConstants.createAlignmentValue(
+        true,
+        DefaultCodeFormatterConstants.WRAP_ONE_PER_LINE,
+        DefaultCodeFormatterConstants.INDENT_ON_COLUMN));
+}
+
+//按照特定的formatter格式保存代码
+public static void saveCuDiffToFile(String path,String source,CompilationUnit cu){
+    Document document = new Document(source);
+    TextEdit edits = cu.rewrite(document, formatterOptions); //树上的变化生成了像diff一样的东西
+    try {
+        edits.apply(document);
+        toFile(document.get(),path);
+    } catch (MalformedTreeException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+    } catch (BadLocationException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+    } //应用diff
+
+}
+</code></pre><p>###去除变量初始化赋值代码</p>
+<pre><code>if(!ModifierSet.isFinal(iModifier) &amp;&amp; !node.isInterface()){
+    List fragments=field.fragments();
+    Type type=field.getType();
+    for(Object obj:fragments){
+            VariableDeclarationFragment f=(VariableDeclarationFragment)obj;
+            Expression ex=f.getInitializer();
+            if(ex!=null &amp;&amp; type instanceof PrimitiveType){
+                    if(ex instanceof NumberLiteral &amp;&amp; (&quot;0&quot;.equals(((NumberLiteral) ex).getToken())
+                            ||&quot;0.0f&quot;.equals(((NumberLiteral) ex).getToken())||&quot;0.0F&quot;.equals(((NumberLiteral) ex).getToken())
+                            ||&quot;0.0d&quot;.equals(((NumberLiteral) ex).getToken())||&quot;0.0D&quot;.equals(((NumberLiteral) ex).getToken())
+                            ||&quot;0.0l&quot;.equals(((NumberLiteral) ex).getToken())||&quot;0.0L&quot;.equals(((NumberLiteral) ex).getToken()))){
+                        f.setInitializer(null);
+                    }
+                    if(ex instanceof BooleanLiteral &amp;&amp; ((BooleanLiteral) ex).booleanValue()==false){
+                        f.setInitializer(null);
+                    }
+            }
+            if(ex!=null &amp;&amp; type instanceof SimpleType &amp;&amp; ex instanceof NullLiteral){
+                f.setInitializer(null);
+            }
+    }
+}
+</code></pre><h3 id="去除private变量"><a href="#去除private变量" class="headerlink" title="去除private变量"></a>去除private变量</h3><pre><code>for(FieldDeclaration field:node.getFields()){
+            int iModifier=field.getModifiers();
+            if(ModifierSet.isPrivate(iModifier)){
+                List modifiers=field.modifiers();
+                for(Object obj:modifiers){
+                    if(obj instanceof Modifier){
+                        Modifier modifer =(Modifier)obj;
+                        if(modifer.isPrivate()){
+                            modifiers.remove(obj);
+                            break;
+                        }
+                    }
+                }
+        }
+ }
+</code></pre><p>###去除private方法<br>对于private方法的去除需要考虑同一个包下的继承关系带来的冲突以及重写函数带来的冲突。<br>比如同一个包下存在如下情况，一旦都将private变成package，就会出现重写冲突，导致编译失败。<br>        package com.tencent;</p>
+<pre><code>public class A extends B{
+    private void test(){
+
+    }
+}
+
+package com.tencent;
+public class B {
+     private int test(){
+        return 0;
+    }
+}
+</code></pre><p>代码思路主要是通过<br>        public class ASTClass {<br>            public String packageName;<br>            public String parentName;<br>            public String clazzName;<br>            public ArrayList<string> funcs=new ArrayList&lt;&gt;();<br>        }<br>的结构记录每个java类，对于整个项目代码的处理分两步：</string></p>
+<ul>
+<li>第一步是扫描和分析同一个包目录下java文件，得到对应的ASTClass；</li>
+<li>第二步是根据第一步包目录的ASTClass扫描结果,决定当前的java文件是否需要将对应的private变成package，如果在同一个包目录下有继承关系并且存在同名函数，就不会进行修改。</li>
+</ul>
+<p>但是限于JDT只能对java代码进行分析，如果包名相同的jar包和工程代码中存在上述的private方法冲突问题，确实就会导致程序被JDT优化后编译失败的情况，这里鲁棒性还是始终不够的，这是原理上的问题。</p>
+<p>##减包代码开源以及使用<br><a href="https://github.com/frostpeng/CodeReducer" target="_blank" rel="noopener">CodeReducer的代码</a></p>
+<p>###使用：<br>运行java程序，传入参数为优化工程的根目录，如果设置CodeReducer中的needPrintResult为true，会在运行目录下生成codelog.txt，其中记录有所有的代码修改。</p>
+<p>##其它优化方向<br>目前我提出的优化主要还是在java代码级别进行修改，减少编译后的方法数和包大小，其实可以尝试用java的ASM字节码框架（基于class层面）或者ASMDex（基于dex层面）。</p>
+<p>ASM目前的缺陷是针对class修改字节码后可能出现编译通过但是运行崩溃得去那个框，缺少有力的测试验证方式。<br>ASMDex 目前框架自身bug比较多，暂时也不太想去踩坑，大家有兴趣可以研究下。</p>
+<p>##优化后感<br>本方案优化效果还是不错的，既可以减包大小，也能减方法数，而且能实现在编译时动态修改java代码，避免因为去掉private代码变得非常难看。但是因为动态编译以及只能在java层作优化，而无法修改jar包的代码，鲁棒性还存在一定问题，并且会导致编译时间加长，大家自行斟酌是否需要在自己的项目中使用本方案。</p>
+<p>虽然最终这套减包方案没有在手q中应用，但在研究的过程中也学习到了很多东西。重要的是完成这件事的过程，而不仅仅是这件事的结果。</p>
+
+      
+    </div>
+    <footer>
+      
+
+        
+          <div class="alignleft post-nav">
+            <em>上一篇: </em><a href="/2018/11/05/ffmpeg/音视频编码基础和ffmpeg/">音视频编码基础和ffmpeg</a>
+          </div>
+        
+        
+          <div class="alignright post-nav">
+            <em>下一篇: </em><a href="/2016/05/02/减包/分析Dalvik字节码进行减包优化/">分析Dalvik字节码进行减包优化</a>
+          </div>
+          <div class="clearfix"></div>
+        
+
+        
+          <div class="copyright">
+            
+              <span class="claim">版权声明：自由转载-非商用-无演绎-保持署名 @ Creative Commons BY-NC-ND 3.0</span>
+            
+            
+              <span class="from-link">
+                <em>本文链接地址:</em>
+                <a href="/2016/05/08/减包/利用Eclipse JDT减少方法数和包大小/">
+                  http://frostpeng.github.io/2016/05/08/减包/利用Eclipse JDT减少方法数和包大小/
+                </a>
+              </span>
+            
+          </div>
+        
+        
+  
+  <div class="categories">
+    <a href="/categories/tech/">tech</a>
+  </div>
+
+        
+  
+  <div class="tags">
+    <a href="/tags/android/">android</a>, <a href="/tags/减包/">减包</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+    
+    
+      <a class="addthis_button_sinaweibo_like"></a>
+    
+    
+      <a class="addthis_button_linkedin"></a>
+    
+    
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+<section id="comment">
+  <h1 class="title">留言</h1>
+
+  
+      <div id="fb-root"></div>
+<script>
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=123456789012345";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<div class="fb-comments" data-href="http://frostpeng.github.io/2016/05/08/减包/利用Eclipse JDT减少方法数和包大小/index.html" data-num-posts="5" data-width="840" data-colorscheme="light"></div>
+      
+  
+</section>
+
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="text" name="q" results="0" placeholder="搜一下">
+    <i class="icon-search"></i>
+    <input type="hidden" name="q" value="site:frostpeng.github.io">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">标签</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/android/">android</a><small>3</small></li>
+  
+    <li><a href="/tags/ffmpeg/">ffmpeg</a><small>2</small></li>
+  
+    <li><a href="/tags/http2-0/">http2.0</a><small>1</small></li>
+  
+    <li><a href="/tags/减包/">减包</a><small>2</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">分类</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/tech/">tech</a><small>6</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">最新文章</h3>
+  <ul class="entry">
+    
+      <li>
+        <a href="/2018/12/01/ffmpeg/《ffmpeg从入门到精通》关键点/">《ffmpeg从入门到精通》关键点</a>
+      </li>
+    
+      <li>
+        <a href="/2018/12/01/http/http2.0改造/">图片下载支持http2.0改造方案关键点</a>
+      </li>
+    
+      <li>
+        <a href="/2018/11/05/ffmpeg/音视频编码基础和ffmpeg/">音视频编码基础和ffmpeg</a>
+      </li>
+    
+      <li>
+        <a href="/2016/05/08/减包/利用Eclipse JDT减少方法数和包大小/">利用Eclipse JDT减少方法数和包大小</a>
+      </li>
+    
+      <li>
+        <a href="/2016/05/02/减包/分析Dalvik字节码进行减包优化/">分析Dalvik字节码进行减包优化</a>
+      </li>
+    
+      <li>
+        <a href="/2015/12/24/内存泄漏/leakcanary/">LeakCanary分析详解</a>
+      </li>
+    
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <div id="go-pg-top"><i class="icon-arrow-up"></i></div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2018 frostpeng
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.2.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/page.js"></script>
+
+
+</body>
+
+</html>

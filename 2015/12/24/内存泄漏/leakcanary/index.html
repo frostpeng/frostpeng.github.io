@@ -1,0 +1,633 @@
+<!DOCTYPE HTML>
+<html>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  
+  <title>LeakCanary分析详解 | Frost&#39;s Blog</title>
+  <meta name="author" content="frostpeng">
+  
+  <meta name="description" content="引言内存泄露是Android开发过程中非常常见的问题，指的是进程中某些已经完成使命的垃圾对象始终占据着内存空间，直接或间接保持对GCROOTS的引用，导致无法被GC回收。对于Android系统而言，因为Android每个进程有自己的内存上限，当app使用内存超过可申请的内存时，就会出现Out Of ">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="LeakCanary分析详解">
+  <meta property="og:site_name" content="Frost&#39;s Blog">
+
+  
+    <meta property="og:image" content="undefined">
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Frost&#39;s Blog" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="/js/jquery.min.js"></script>
+
+  
+<script type="text/javascript">
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-45019001-1', 'topdna.org');
+  ga('send', 'pageview');
+</script>
+
+
+</head>
+</html>
+
+<body>
+  <!--[if lte IE 8]> <div style=' clear: both; height: 59px; padding:0 0 0 15px; position: relative;margin:0 auto;'> <a href="http://windows.microsoft.com/en-US/internet-explorer/products/ie/home?ocid=ie6_countdown_bannercode"><img src="http://storage.ie6countdown.com/assets/100/images/banners/warning_bar_0027_Simplified Chinese.jpg" border="0" height="42" width="820" alt="You are using an outdated browser. For a faster, safer browsing experience, upgrade for free today." style='margin-left:auto;margin-right:auto;display: block;'/></a></div> <![endif]-->
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Frost&#39;s Blog</a></h1>
+  <h2><a href="/">冰霜工作室</a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">首页</a></li>
+    
+      <li><a href="/categories/tech/">技术</a></li>
+    
+      <li><a href="/categories/life/">生活</a></li>
+    
+      <li><a href="/archives">归档</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <time datetime="2015-12-24T11:11:12.000Z"><a href="/2015/12/24/内存泄漏/leakcanary/">2015-12-24</a></time>
+      
+      
+  
+    <h1 class="title">LeakCanary分析详解</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>内存泄露是Android开发过程中非常常见的问题，指的是进程中某些已经完成使命的垃圾对象始终占据着内存空间，直接或间接保持对GCROOTS的引用，导致无法被GC回收。对于Android系统而言，因为Android每个进程有自己的内存上限，当app使用内存超过可申请的内存时，就会出现Out Of Memory的错误。如果应用存在内存泄露，出现OOM，很难从堆栈中直接分析出问题原因。<br>对于Android应用内存泄露的检测，通常处理的情况是：</p>
+<ol>
+<li>通过统计平台发现相关的OOM问题上报；</li>
+<li>重现内存泄露问题<strong>（本步骤最需要花大量的时间和人力）</strong>，并记录堆栈信息并dump内存得到相关的hprof文件；</li>
+<li>用MAT等工具的方式来分析查找到泄露对象以及到GC ROOTS的最短强引用路径；</li>
+<li>修复问题。</li>
+</ol>
+<p>内存泄露的原因可能有很多种情况，比如非静态内部类的静态实例、内部类handler消息传递、注册某个对象后未反注册、集合中对象没及时清理、资源对象未关闭、图片读取、Adapter未缓存View等。对此按照上述的人工排查的方式来处理往往需要的时间和人力很大，本文主要是介绍Square公司推出的LeakCanary,介绍其使用和相关原理。</p>
+<h2 id="LeakCanary的使用"><a href="#LeakCanary的使用" class="headerlink" title="LeakCanary的使用"></a>LeakCanary的使用</h2><p>LeakCanary的源工程地址为<a href="https://github.com/square/leakcanary" target="_blank" rel="noopener">https://github.com/square/leakcanary</a>。</p>
+<h3 id="1-接入项目依赖"><a href="#1-接入项目依赖" class="headerlink" title="1.接入项目依赖"></a>1.接入项目依赖</h3><ul>
+<li><p>在Android Studio中使用（<strong>添加Gradle依赖</strong>）</p>
+<p>  通过debugCompile和releaseCompile来控制debug和release版本，release版本大家肯定不希望还带有自动内存监测的入口。</p>
+</li>
+</ul>
+<pre><code>dependencies {
+debugCompile &apos;com.squareup.leakcanary:leakcanary-android:1.3.1&apos;
+releaseCompile ‘com.squareup.leakcanary:leakcanary-android-no-op:1.3.1&apos;
+}
+</code></pre><ul>
+<li><p>在Eclipse 中使用（<strong>作为Library依赖</strong>）</p>
+<p>  LeakCanary项目默认没有提供Eclipse的依赖方式，相关开源工程地址为<a href="https://github.com/teffy/LeakcanarySample-Eclipse" target="_blank" rel="noopener">https://github.com/teffy/LeakcanarySample-Eclipse</a>。</p>
+<pre><code>android.library.reference.1=../leakcanarylib 
+</code></pre><p>   <strong>PS：</strong>对于某些特殊的工程，不便于添加依赖工程并且也不是gradle构建的项目，可以将相关的java文件和res文件拷贝到对应的资源目录，并且在AndroidManifest添加下列代码也可以接入LeakCanary。</p>
+<pre><code> &lt;service android:name=&quot;com.squareup.leakcanary.internal.HeapAnalyzerService&quot;
+    android:enabled=&quot;false&quot;
+    android:process=&quot;:leakcanary&quot; /&gt;
+&lt;service android:name=&quot;com.squareup.leakcanary.DisplayLeakService&quot;
+    android:enabled=&quot;false&quot; /&gt;
+&lt;activity
+    android:name=&quot;com.squareup.leakcanary.internal.DisplayLeakActivity&quot;
+    android:enabled=&quot;false&quot;
+    android:icon=&quot;@drawable/__leak_canary_icon&quot;
+    android:label=&quot;@string/__leak_canary_display_activity_label&quot;
+    android:taskAffinity=&quot;com.squareup.leakcanary&quot;
+    android:theme=&quot;@style/__LeakCanary.Base&quot; &gt;
+    &lt;intent-filter&gt;
+        &lt;action android:name=&quot;android.intent.action.MAIN&quot; /&gt;
+        &lt;category android:name=&quot;android.intent.category.LAUNCHER&quot; /&gt;
+    &lt;/intent-filter&gt;
+&lt;/activity&gt;
+</code></pre></li>
+</ul>
+<h3 id="2-加入检测代码"><a href="#2-加入检测代码" class="headerlink" title="2. 加入检测代码"></a>2. 加入检测代码</h3><ul>
+<li><p>监听可能泄露的对象(<strong>添加RefWatcher来watch对象</strong>)</p>
+<pre><code>RefWatcher refWatcher = {...};
+refWatcher.watch(badObject);//监听本该被gc的对象
+</code></pre></li>
+<li><p>对于Android 4.0以上版本的Activity监听(<strong>LeakCanary.install(Application)</strong>)</p>
+<pre><code>public class ExampleApplication extends Application {
+    public static RefWatcher getRefWatcher(Context context) {
+        ExampleApplication application = (ExampleApplication)context.getApplicationContext();
+        return application.refWatcher;
+    }
+    private RefWatcher refWatcher;
+    @Override public void onCreate() {
+        super.onCreate();
+        refWatcher = LeakCanary.install(this);
+    }
+}
+</code></pre></li>
+<li><p>对于Fragment和Android 4.0以下的Activity监听(<strong>基类OnDestory加入watch</strong>)</p>
+<pre><code>//在Activity和Fragment的基类的onDestory中添加watch
+public abstract class BaseFragment extends Fragment {
+    @Override public void onDestroy() {
+    super.onDestroy();
+        RefWatcher refWatcher = ExampleApplication.getRefWatcher(getActivity());
+        refWatcher.watch(this);
+    }
+}
+</code></pre></li>
+</ul>
+<h3 id="3-一般的输出结果"><a href="#3-一般的输出结果" class="headerlink" title="3. 一般的输出结果"></a>3. 一般的输出结果</h3><p><img src="/2015/12/24/内存泄漏/leakcanary/leaktrace.png" alt="输出结果" title="输出结果"></p>
+<p>当发生泄漏时，系统通知栏会弹窗如图左上角所示。并且会在应用中出现一个leaks的入口，点击进去会出现泄露路径相关描述。通过右上角的button可以分享相关的leakInfo以及对应的dump出来的hprof文件。对于hprof文件，可以通过分析其中的KeyedWeakReference的引用（稍后会在原理处说明做法的原因），即可得到内存泄露发生时检测的对象，能够比较快的定位问题。</p>
+<h3 id="4-自定义泄露处理流程"><a href="#4-自定义泄露处理流程" class="headerlink" title="4. 自定义泄露处理流程"></a>4. 自定义泄露处理流程</h3><pre><code>public class LeakUploadService extends DisplayLeakService {
+    @Override
+    protected void afterDefaultHandling(HeapDump heapDump,AnalysisResult result, String leakInfo) {
+        if (!result.leakFound || result.excludedLeak) {
+          return;
+        } 
+        //可以做相关处理，比如上传云服务器
+        }
+    }
+    public class ExampleApplication extends Application
+    {
+        protected RefWatcher installLeakCanary() {
+        return LeakCanary.install(app, LeakUploadService.class);
+    }
+}
+</code></pre><h3 id="5-自定义忽略的泄露"><a href="#5-自定义忽略的泄露" class="headerlink" title="5. 自定义忽略的泄露"></a>5. 自定义忽略的泄露</h3><ul>
+<li><p>忽略泄露的类</p>
+<pre><code>//忽略com.example.Exampleclass的exampleField的泄露
+public class ExampleApplication extends Application {
+    protected RefWatcher installLeakCanary() {
+        ExcludedRefs excludedRefs = AndroidExcludedRefs.createAppDefaults()
+        .instanceField(&quot;com.example.ExampleClass&quot;, &quot;exampleField&quot;)
+        .build();
+        return LeakCanary.install(this, DisplayLeakService.class, excludedRefs);
+    }
+}
+</code></pre></li>
+<li><p>忽略需要监听的Activity</p>
+<pre><code>//不用监听NoLeakActivity
+Public class ExampleApplication extends Application {
+    protected RefWatcher installLeakCanary() {
+        final RefWatcher refWatcher = androidWatcher(application);
+        registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {
+        public void onActivityDestroyed(Activity activity) {
+          if (activity instanceof  NoLeakActivity) {
+              return;
+          }
+          refWatcher.watch(activity);
+        }
+        // ...
+        });
+        return refWatcher;
+    }
+}
+</code></pre></li>
+</ul>
+<h2 id="LeakCanary自动检测原理"><a href="#LeakCanary自动检测原理" class="headerlink" title="LeakCanary自动检测原理"></a>LeakCanary自动检测原理</h2><ul>
+<li>LeakCanary.install(application)通过registerActivityLifecycleCallbacks在Activity的onDestory中加入RefWatcher监听Activity。</li>
+<li>RefWatcher.watch() 创建一个 KeyedWeakReference 到要被监控的对象。</li>
+<li>然后在后台线程检查引用是否被清除，如果没有，调用GC。如果引用还是未被清除，把 heap 内存 dump 到 APP 对应的文件系统中的一个 .hprof 文件中。</li>
+<li>在另外一个进程中的 HeapAnalyzerService 有一个 HeapAnalyzer解析这个文件。</li>
+<li>得益于唯一的 reference key, HeapAnalyzer 找到 KeyedWeakReference，定位内存泄露。</li>
+<li>HeapAnalyzer 计算 到 GC roots 的最短强引用路径，并确定是否是泄露(如果是已知系统级泄漏，会自动忽略掉)。如果是的话，建立导致泄露的引用链。（过滤已知泄漏）</li>
+<li>引用链传递到 APP 进程中的 DisplayLeakService， 并以通知的形式展示出来或者自行处理结果。</li>
+</ul>
+<h2 id="LeakCanary代码结构"><a href="#LeakCanary代码结构" class="headerlink" title="LeakCanary代码结构"></a>LeakCanary代码结构</h2><pre><code>--leakcanary     
+    --leakcanary-analyzer         hprof文件分析模块
+          --HeapAnalyzer          利用HAHA和ShortestPathFinder分析内存泄露是否误报
+          --ShortestPathFinder    查找泄露对象到GC ROOTS的最短强引用路径
+    --leakcanary-android          Android使用模块
+          --LeakCanary            入口类
+          --ActivityRefWatcher    对于4.0以上监听Activity Destroy，加入监听
+          --AndroidExcludedRefs   判断泄露是否应该忽略
+          --AndroidWatchExecutor  在主线程空闲时，将检测任务抛入Thread处理
+          --HeapAnalyzerService   分析hprof 
+          --DisplayLeakService    展示分析结果
+          --DisplayLeakActivity   分析结果显示界面
+     --leakcanary-watcher         检测模块
+          --RefWatcher            通过弱引用队列分析是否泄露，二次确认
+          --GcTrigger             若发现没有释放，触发gc
+</code></pre><h2 id="LeackCanary源码分析"><a href="#LeackCanary源码分析" class="headerlink" title="LeackCanary源码分析"></a>LeackCanary源码分析</h2><p>LeakCanary的整个库相对比较复杂，包含了泄漏的监测和相关泄漏dump出来的的hprof分析。源码分析主要包含六个主要的关键源码：</p>
+<ul>
+<li><p><a href="https://github.com/square/leakcanary/blob/master/leakcanary-android/src/main/java/com/squareup/leakcanary/ActivityRefWatcher.java" target="_blank" rel="noopener">ActivityRefWatcher</a></p>
+<p>  通过registerActivityLifecycleCallbacks在Activity的onDestory中加入监听流程（只支持Android 4.0以上）。</p>
+<pre><code>private final Application.ActivityLifecycleCallbacks lifecycleCallbacks =
+new Application.ActivityLifecycleCallbacks() {
+    @Override public void onActivityDestroyed(Activity activity) {
+        refWatcher.watch(activity);
+    }
+};
+</code></pre></li>
+<li><p><a href="https://github.com/square/leakcanary/blob/master/leakcanary-watcher/src/main/java/com/squareup/leakcanary/RefWatcher.java" target="_blank" rel="noopener">RefWatcher</a></p>
+<p>  创建KeyedWeakReference并通过AndroidWatchExecutor（主要是为了确保在主线程空闲的时候进行检测）执行监听流程。</p>
+<pre><code>public void watch(Object watchedReference, String referenceName) {
+    checkNotNull(watchedReference, &quot;watchedReference&quot;);
+    checkNotNull(referenceName, &quot;referenceName&quot;);
+    if (debuggerControl.isDebuggerAttached()) {
+      return;
+    }
+    final long watchStartNanoTime = System.nanoTime();
+    String key = UUID.randomUUID().toString();
+    retainedKeys.add(key);
+    final KeyedWeakReference reference =
+        new KeyedWeakReference(watchedReference, key, referenceName, queue);
+    watchExecutor.execute(new Runnable() {
+      @Override public void run() {
+        ensureGone(reference, watchStartNanoTime);
+      }
+    });
+  }
+</code></pre><p>判断对象是否引用消除主要是通过判断retainedKeys中是否存在对应KeyedWeakReference的key。<br>监听流程主要是先移除回收队列中存在的相关的key，确认是否引用消除，没有则进行<code>gcTrigger.runGc()</code>来gc，再次移除回收队列中存在的相关的key，如果引用仍未清除，则判断内存泄漏。</p>
+<pre><code>void ensureGone(KeyedWeakReference reference, long watchStartNanoTime) {
+  long gcStartNanoTime = System.nanoTime();
+  removeWeaklyReachableReferences();
+  if (gone(reference) || debuggerControl.isDebuggerAttached()) {
+    return;
+  }
+  gcTrigger.runGc();
+  removeWeaklyReachableReferences();
+  if (!gone(reference)) {
+    //dump内存并作相关处理
+  }
+}
+
+private void removeWeaklyReachableReferences() {
+  KeyedWeakReference ref;
+  while ((ref = (KeyedWeakReference) queue.poll()) != null) {
+    retainedKeys.remove(ref.key);
+  }
+}
+</code></pre></li>
+<li><p><a href="https://github.com/square/leakcanary/blob/master/leakcanary-android/src/main/java/com/squareup/leakcanary/AndroidWatchExecutor.java" target="_blank" rel="noopener">AndroidWatchExecutor</a></p>
+<p>  AndroidWatchExecutor是为了保证监听流程的执行是在主线程空闲的时候进行检测。</p>
+<pre><code>@Override public void execute(final Runnable command) {
+    if (isOnMainThread()) {
+      executeDelayedAfterIdleUnsafe(command);
+    } else {
+      mainHandler.post(new Runnable() {
+        @Override public void run() {
+          executeDelayedAfterIdleUnsafe(command);
+        }
+      });
+    }
+  }
+
+  private boolean isOnMainThread() {
+    return Looper.getMainLooper().getThread() == Thread.currentThread();
+  }
+
+  private void executeDelayedAfterIdleUnsafe(final Runnable runnable) {
+    Looper.myQueue().addIdleHandler(new MessageQueue.IdleHandler() {
+      @Override public boolean queueIdle() {
+        backgroundHandler.postDelayed(runnable, 5000);
+        return false;
+      }
+    });
+  }
+</code></pre><p>  保证在主线程空闲的时候检测的主要原因是因为leakcanary检测过程中一旦发现疑似泄漏就会dumphprof并进行分析，虽然dump的过程在后台线程，但是dumphprof一定会执行到对应的dump.cc，执行dumpHeap时所有的线程都会暂停，会造成突然卡顿；所以需要在主线程空闲的时候才进行检测。</p>
+<pre><code>void DumpHeap(const char* filename, int fd, bool direct_to_ddms) {
+    CHECK(filename != NULL);
+    Runtime::Current()-&gt;GetThreadList()-&gt;SuspendAll();
+    Hprof hprof(filename, fd, direct_to_ddms);
+    hprof.Dump();
+    Runtime::Current()-&gt;GetThreadList()-&gt;ResumeAll();
+}
+</code></pre></li>
+</ul>
+<ul>
+<li><p><a href="https://github.com/square/leakcanary/blob/master/leakcanary-watcher/src/main/java/com/squareup/leakcanary/GcTrigger.java" target="_blank" rel="noopener">GcTrigger</a></p>
+<p>  GCTrigger主要是执行GC并且wait 100毫秒，这个设定参考自<a href="https://android.googlesource.com/platform/libcore/+/master/support/src/test/java/libcore/java/lang/ref/FinalizationTester.java" title="FinalizationTest" target="_blank" rel="noopener">FinalizationTest</a>。</p>
+<pre><code>GcTrigger DEFAULT = new GcTrigger() {
+  @Override public void runGc() {
+    Runtime.getRuntime().gc();
+    enqueueReferences();
+    System.runFinalization();
+  }
+
+  private void enqueueReferences() {
+    try {
+      Thread.sleep(100);
+    } catch (InterruptedException e) {
+      throw new AssertionError();
+    }
+  }
+};
+</code></pre><p>  其中使用Runtime.getRuntime().gc()比System.gc()更能保证GC执行，在Android 5.0以下的源码中，System.gc()</p>
+<pre><code>public static void gc() {
+    Runtime.getRuntime().gc();
+}
+</code></pre><p>  Android 5.0以上系统中：</p>
+<pre><code>public static void gc() {
+    boolean shouldRunGC;
+    synchronized(lock) {
+        shouldRunGC = justRanFinalization;
+        if (shouldRunGC) {
+            justRanFinalization = false;
+        } else {
+            runGC = true;
+        }
+    }
+    if (shouldRunGC) {
+        Runtime.getRuntime().gc();
+    }
+}
+</code></pre></li>
+<li><p><a href="https://github.com/square/leakcanary/blob/master/leakcanary-android/src/main/java/com/squareup/leakcanary/AndroidExcludedRefs.java" target="_blank" rel="noopener">AndroidExcludedRefs</a><br>  主要用于处理一些系统带来的误报泄漏，原则上是在对应版本忽略相关的泄漏。例如：</p>
+<pre><code>ACTIVITY_CLIENT_RECORD__NEXT_IDLE(SDK_INT &gt;= KITKAT &amp;&amp; SDK_INT &lt;= LOLLIPOP) {
+@Override void add(ExcludedRefs.Builder excluded) {
+  // Android AOSP sometimes keeps a reference to a destroyed activity as a &quot;nextIdle&quot; client
+  // record in the android.app.ActivityThread.mActivities map.
+  // Not sure what&apos;s going on there, input welcome.
+  excluded.instanceField(&quot;android.app.ActivityThread$ActivityClientRecord&quot;, &quot;nextIdle&quot;);
+}
+  }
+</code></pre></li>
+<li><p><a href="https://github.com/square/leakcanary/blob/master/leakcanary-analyzer/src/main/java/com/squareup/leakcanary/ShortestPathFinder.java" target="_blank" rel="noopener">ShortestPathFinder</a><br>  寻找泄漏的最短强引用路径，算法类似于广度优先搜索算法，先找到对应的GCROOTS，压入队列中，依次遍历子节点并加入队列中，直到找到对应的泄漏，即可确定泄漏最短强引用路径，顺带可以返回对应泄漏是否是系统已知。</p>
+<pre><code>Result findPath(Snapshot snapshot, Instance leakingRef) {
+    clearState();
+    canIgnoreStrings = !isString(leakingRef);
+    enqueueGcRoots(snapshot);
+    boolean excludingKnownLeaks = false;
+    LeakNode leakingNode = null;
+    while (!toVisitQueue.isEmpty() || !toVisitIfNoPathQueue.isEmpty()) {
+      LeakNode node;
+      if (!toVisitQueue.isEmpty()) {
+        node = toVisitQueue.poll();
+      } else {
+        node = toVisitIfNoPathQueue.poll();
+        excludingKnownLeaks = true;
+      }
+      if (node.instance == leakingRef) {
+        leakingNode = node;
+        break;
+      }
+      if (checkSeen(node)) {
+        continue;
+      }
+      if (node.instance instanceof RootObj) {
+        visitRootObj(node);
+      } else if (node.instance instanceof ClassObj) {
+        visitClassObj(node);
+      } else if (node.instance instanceof ClassInstance) {
+        visitClassInstance(node);
+      } else if (node.instance instanceof ArrayInstance) {
+        visitArrayInstance(node);
+      } else {
+        throw new IllegalStateException(&quot;Unexpected type for &quot; + node.instance);
+      }
+    }
+    return new Result(leakingNode, excludingKnownLeaks);
+  }
+</code></pre></li>
+</ul>
+<h2 id="综合比较"><a href="#综合比较" class="headerlink" title="综合比较"></a>综合比较</h2><table>
+<thead>
+<tr>
+<th>总结</th>
+<th>LeakCanary</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Acvitiy泄漏</td>
+<td>Android 4.0以上</td>
+</tr>
+<tr>
+<td>自定义对象检测</td>
+<td>支持</td>
+</tr>
+<tr>
+<td>泄漏时提醒</td>
+<td>支持</td>
+</tr>
+<tr>
+<td>自动Dump</td>
+<td>支持</td>
+</tr>
+<tr>
+<td>LeakCanary优势</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Dump分析</td>
+<td>支持，能够根据KeyedWeakReference</td>
+</tr>
+<tr>
+<td>显示泄漏路径</td>
+<td>显示十分详细</td>
+</tr>
+<tr>
+<td>劣势</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>白名单设置</td>
+<td>源码写死</td>
+</tr>
+<tr>
+<td>配合自动化</td>
+<td>不支持</td>
+</tr>
+<tr>
+<td>自动Fix系统泄漏</td>
+<td>不支持，只能忽略</td>
+</tr>
+</tbody>
+</table>
+<p>对于LeakCanary，泄漏问题的定位更加清晰，对于的dump文件也相对容易找到泄漏，但是如果需要非常自动化的用于自己的项目中，还需要比较大的改造。</p>
+
+      
+    </div>
+    <footer>
+      
+
+        
+          <div class="alignleft post-nav">
+            <em>上一篇: </em><a href="/2016/05/02/减包/分析Dalvik字节码进行减包优化/">分析Dalvik字节码进行减包优化</a>
+          </div>
+        
+        
+
+        
+          <div class="copyright">
+            
+              <span class="claim">版权声明：自由转载-非商用-无演绎-保持署名 @ Creative Commons BY-NC-ND 3.0</span>
+            
+            
+              <span class="from-link">
+                <em>本文链接地址:</em>
+                <a href="/2015/12/24/内存泄漏/leakcanary/">
+                  http://frostpeng.github.io/2015/12/24/内存泄漏/leakcanary/
+                </a>
+              </span>
+            
+          </div>
+        
+        
+  
+  <div class="categories">
+    <a href="/categories/tech/">tech</a>
+  </div>
+
+        
+  
+  <div class="tags">
+    <a href="/tags/android/">android</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+    
+    
+      <a class="addthis_button_sinaweibo_like"></a>
+    
+    
+      <a class="addthis_button_linkedin"></a>
+    
+    
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+<section id="comment">
+  <h1 class="title">留言</h1>
+
+  
+      <div id="fb-root"></div>
+<script>
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=123456789012345";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<div class="fb-comments" data-href="http://frostpeng.github.io/2015/12/24/内存泄漏/leakcanary/index.html" data-num-posts="5" data-width="840" data-colorscheme="light"></div>
+      
+  
+</section>
+
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="text" name="q" results="0" placeholder="搜一下">
+    <i class="icon-search"></i>
+    <input type="hidden" name="q" value="site:frostpeng.github.io">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">标签</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/android/">android</a><small>3</small></li>
+  
+    <li><a href="/tags/ffmpeg/">ffmpeg</a><small>2</small></li>
+  
+    <li><a href="/tags/http2-0/">http2.0</a><small>1</small></li>
+  
+    <li><a href="/tags/减包/">减包</a><small>2</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">分类</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/tech/">tech</a><small>6</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">最新文章</h3>
+  <ul class="entry">
+    
+      <li>
+        <a href="/2018/12/01/ffmpeg/《ffmpeg从入门到精通》关键点/">《ffmpeg从入门到精通》关键点</a>
+      </li>
+    
+      <li>
+        <a href="/2018/12/01/http/http2.0改造/">图片下载支持http2.0改造方案关键点</a>
+      </li>
+    
+      <li>
+        <a href="/2018/11/05/ffmpeg/音视频编码基础和ffmpeg/">音视频编码基础和ffmpeg</a>
+      </li>
+    
+      <li>
+        <a href="/2016/05/08/减包/利用Eclipse JDT减少方法数和包大小/">利用Eclipse JDT减少方法数和包大小</a>
+      </li>
+    
+      <li>
+        <a href="/2016/05/02/减包/分析Dalvik字节码进行减包优化/">分析Dalvik字节码进行减包优化</a>
+      </li>
+    
+      <li>
+        <a href="/2015/12/24/内存泄漏/leakcanary/">LeakCanary分析详解</a>
+      </li>
+    
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <div id="go-pg-top"><i class="icon-arrow-up"></i></div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2018 frostpeng
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.2.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/page.js"></script>
+
+
+</body>
+
+</html>

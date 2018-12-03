@@ -1,0 +1,1507 @@
+<!DOCTYPE HTML>
+<html>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  
+  <title>Frost&#39;s Blog</title>
+  <meta name="author" content="frostpeng">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+  <meta property="og:site_name" content="Frost&#39;s Blog">
+
+  
+    <meta property="og:image" content="undefined">
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Frost&#39;s Blog" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="/js/jquery.min.js"></script>
+
+  
+<script type="text/javascript">
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-45019001-1', 'topdna.org');
+  ga('send', 'pageview');
+</script>
+
+
+</head>
+</html>
+
+<body>
+  <!--[if lte IE 8]> <div style=' clear: both; height: 59px; padding:0 0 0 15px; position: relative;margin:0 auto;'> <a href="http://windows.microsoft.com/en-US/internet-explorer/products/ie/home?ocid=ie6_countdown_bannercode"><img src="http://storage.ie6countdown.com/assets/100/images/banners/warning_bar_0027_Simplified Chinese.jpg" border="0" height="42" width="820" alt="You are using an outdated browser. For a faster, safer browsing experience, upgrade for free today." style='margin-left:auto;margin-right:auto;display: block;'/></a></div> <![endif]-->
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Frost&#39;s Blog</a></h1>
+  <h2><a href="/">冰霜工作室</a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">首页</a></li>
+    
+      <li><a href="/categories/tech/">技术</a></li>
+    
+      <li><a href="/categories/life/">生活</a></li>
+    
+      <li><a href="/archives">归档</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <time datetime="2018-12-01T11:11:12.000Z"><a href="/2018/12/01/ffmpeg/《ffmpeg从入门到精通》关键点/">2018-12-01</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2018/12/01/ffmpeg/《ffmpeg从入门到精通》关键点/">《ffmpeg从入门到精通》关键点</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>###ffmpeg学习(学习时是4.1版本)<br>豆瓣阅读购买电子书（ffmpeg从入门到精通 <a href="https://read.douban.com/ebook/49786757/）" target="_blank" rel="noopener">https://read.douban.com/ebook/49786757/）</a></p>
+<p>####简介（Fast Forward 和 Moving Picture Experts Group）</p>
+<ol>
+<li>音视频编解码工具和编解码开发套件；</li>
+<li>提供多种媒体格式的封装和解封装，包括多种音视频编码，多种协议流媒体、多种色彩格式转换、多种采样率转换、多种码率转换等，提供了丰富的插件模式，包含封装、解封装、编码解码插件。</li>
+<li>出名的开源社区引用：ijkplayer、ffmpeg2theora、VLC、MPlayer等，是在 LGPL/GPL 协议 下发布的(如果使用了 GPL 协议发布的模块则必须采用 GPL 协议)，任何人都可以自由使 用，但必须严格遵守 LGPL/GPL 协议 。</li>
+</ol>
+<p>####组成</p>
+<ol>
+<li>包含AVFormat、 AVCodec、 AVFilter、 AVDevice、 AVUtil 等 模块库；<ul>
+<li>AVFormat 用于媒体封装格式处理，包括文件MP4、FLV等格式和RTMP等网络协议封装格式，可以自定义对应的封装格式支持能力；</li>
+<li>AVCodec 用于编解码格式支持处理，默认支持MPEG4、AAC等自带媒体编码，还支持第三方的编解码器，比如H.264用x264编码器，H.265用x265；</li>
+<li>AVFilter 用于通用的音视频、字幕等滤镜处理框架;</li>
+<li>swscale主要用于高级别的图像转换api，常用于视频从1080p转换为720P等缩放；</li>
+<li>swresample 音频重采样API，操作音频采样、音频通道布局转换和布局调整。</li>
+</ul>
+</li>
+<li>ffplay用来播放，系统需要有SDL来支撑播放，ffplay提供了音视频显示和播放相关的图像信息，音频的波形信息等。</li>
+<li>ffprobe用于分析多媒体文件，从中获取你想要了解的媒体信息。</li>
+<li><p>ffmpeg源码中可以用：</p>
+<ul>
+<li>configure –help查看所需要的第三方外部库和对应的支持编译参数；</li>
+<li>configure –list-encoders、configure –list-decoders可以用来查看编译支持的编解码器；</li>
+<li>configure –list–muxers、configure –list–demuxers可以用来查看支持的封装和解封装 容器格式；</li>
+<li>configure –list-protocols可以查看支持的流媒体协议。</li>
+<li>./configure  –prefix=/usr/local –enable-gpl –enable-libx264 –enable-libass –enable-ffplay  –extra-cflags=”-Os -fpic -I/Users/frostpeng/privateWorkspace/ffmpeg/x264/include $ADDI_CFLAGS” –extra-ldflags=”-L/Users/frostpeng/privateWorkspace/ffmpeg/x264/lib $ADDI_LDFLAGS “ 支持h264和ffplay编译ffmpeg–enable-libass用来支持字幕</li>
+</ul>
+</li>
+<li><p>ffmpeg –help可以查看常规的命令，包括公共操作参数部分、文件主要操作参数、视频操作参数、音频操作参数和字母操作参数;</p>
+<ul>
+<li>ffmpeg –help看的是基础信息;</li>
+<li>ffmpeg –help long 可以获得高级参数部分;</li>
+<li>ffmpeg –help full 可以获得全部帮助信息;</li>
+</ul>
+</li>
+<li>ffmpeg常用命令<ul>
+<li>ffmpeg-formats查看支持的视频文件格式;</li>
+<li>ffmpeg -version查看库版本;</li>
+<li>ffmpeg -L查看协议;</li>
+<li>ffmpeg -codecs查看编解码支持;</li>
+<li>ffmpeg -encoders和-decoders查看编解码器支持;</li>
+<li>ffmpeg -filters可以查看支持的滤镜；</li>
+<li>ffmpeg -h 支持查看具体demuxer、muxer、encoder、decoder等操作参数（比如ffmpeg-h muxer=flv）；</li>
+<li>ffmpeg -h filter=colorkey 、ffmpeg-h decoder=h264 等方式查看详细参数</li>
+<li>非常有用比如ffmpeg -h encoder=libx264 可以查看libx264在ffmpeg编码中支持的参数调整；</li>
+<li>H264的解码可以分为常规、多线程（多线程可以分为帧级别多线程和slice级别多线程）；</li>
+<li>ffmpeg –help full的AVFormatContext参数部分，用于说明封装转换可使用的参数；</li>
+<li>ffmpeg –help full的AVCodecContext参数部分，用于说明编解码可使用的参数；</li>
+</ul>
+</li>
+<li>ffprobe常用命令<ul>
+<li>ffprobe–help可以查看详细帮助信息；</li>
+<li>ffprobe ffmpeg yuvviewer streameye mp4info 都可以用来查看媒体信息</li>
+<li>ffprobe -show_packets input.flv 查看多媒体数据包信息，一般显示很长段的数据</li>
+<li>ffprobe -show_data -show_packets input.flv 组合查看包的具体数据，一般显示很长段的数据</li>
+<li>ffprobe -show_format input.flv 可以查看多媒体封装格式</li>
+<li>ffprobe -show_frames input.flv 查看视频文件具体帧信息</li>
+<li>ffprobe -show_streams input.flv 查看视频文件流信息</li>
+<li>ffprobe支持key-value格式的显示方式，如果想要格式化的现实，可以用ffprobe -print_format 或者ffprobe -of参数来进行对应输出，print_format支持多种格式包括xml、json、ini、csv（可以用作Excel展示）、flat等，比如ffprobe -of xml -show_streams input.flv   ；ffprobe -of json -show_streams input.flv;</li>
+<li>ffprobe -show_frames -select_streams v -of xml input.mp4 可以用select_streams选择展示的流，v视频/a音频/s字幕</li>
+</ul>
+</li>
+<li>ffplay常用命令<ul>
+<li>ffplay –help查看全部参数</li>
+<li>ffplay -ss 30 -t 10 input.mp4 播放ss设置起点，t表示播放多久，相当于播放30s开始，播放10s文件；</li>
+<li>ffplay -window_title “Hello World, This is a sample” output.mp4 设置播放器标题</li>
+<li>ffplay -window_title “播放测试”  rtmp://up.v.test.com/live/stream 可以打开网络直播流</li>
+<li>time ffplay -window_title “Hello World” -ss 20 -t 10 -autoexit output.mp4 通过time查看命令运行时长</li>
+<li>ffplay -window_title “Test Movie” -vf “subtitles=input.srt” output.mp4 通过filter指定字幕</li>
+<li>ffplay -showmode 1 output.mp3 可视化查看音频波形</li>
+<li>ffplay -flags2 +export_mvs -ss 40 output.mp4 -vf codecview=mv=pf+bf+bb 可以查看运动估计显示的图形</li>
+</ul>
+</li>
+</ol>
+<h4 id="ffmpeg转封装"><a href="#ffmpeg转封装" class="headerlink" title="ffmpeg转封装"></a>ffmpeg转封装</h4><ol>
+<li>mp4的格式信息，主要理解Box和FullBox的概念。moov视频头放在mdat前后都可以，但是网络视频为了尽快播放，一般放在前面。</li>
+<li>mp4分析工具Elecard StreamEye、mp4box、mp4info等</li>
+<li>./ffmpeg -i input.flv -c copy -f mp4 -movflags faststart output.mp4 正常情况下ffmpeg生成moov是在mdat写完成之后再写入，可以通过参数faststart将moov容器移动至mdat的前面；</li>
+<li>FLV也是一种常见格式，注意FLVTAG的概念，主要分为FLV文件头和文件内容。FLV有自己支持的视频编码和音频编码列表，不支持的编码封装时会报错。</li>
+<li>M3U8 是以文件列表形式存在的支持直播、点播的流媒体格式；</li>
+</ol>
+<h4 id="ffmpeg软硬件编码"><a href="#ffmpeg软硬件编码" class="headerlink" title="ffmpeg软硬件编码"></a>ffmpeg软硬件编码</h4><p>目前已经在学习，主要也是各平台的H264编解码相关内容，没啥大的需要查漏补缺的。gpu编码优化这方面可以考虑在工作中应用。</p>
+<h4 id="ffmpeg-流媒体"><a href="#ffmpeg-流媒体" class="headerlink" title="ffmpeg 流媒体"></a>ffmpeg 流媒体</h4><ul>
+<li>目前直播大多数是RTMP、HTTP+FLV、HLS、DASH等方式；</li>
+<li>包含RTMP、HTTP、RTSP等流媒体协议分析；</li>
+<li>了解一次编码、多路输出的操作方式，一次视频推多路直播平台；</li>
+<li>介绍HDS和DASH切片方式的直播支持；</li>
+<li>RTMP常用于实时直播。</li>
+<li>RTSP曾主要用于直播，如今广泛用于安防。</li>
+</ul>
+<p>#####RTSP协议细节</p>
+<ul>
+<li>可以通过TCP 、UDP、HTTP隧道实现。</li>
+<li>UDP容易出现拉流丢包异常，在实时性和可靠性适中时，可以考虑采用TCP方式拉流；</li>
+<li>UDP容易丢包导致花屏、绿屏、灰屏、马赛克等问题；</li>
+</ul>
+<p>#####HTTP细节</p>
+<ul>
+<li>直播和点播都可以用HTTP，ffmpeg就可以用做播放器，也可以用来当服务器；</li>
+<li>http拉流录制和转封装，http传输的flv可以录制为HLS（M3U8）、MP4、FLV等。</li>
+</ul>
+<h5 id="UDP和TCP流媒体"><a href="#UDP和TCP流媒体" class="headerlink" title="UDP和TCP流媒体"></a>UDP和TCP流媒体</h5><ul>
+<li>常用于裸传输场景</li>
+</ul>
+<h5 id="推流和拉流"><a href="#推流和拉流" class="headerlink" title="推流和拉流"></a>推流和拉流</h5><ul>
+<li>拉流表示从服务器获取视频数据到客户端播放；</li>
+<li>推流表示从主播端将视频上传到服务器；</li>
+</ul>
+<h5 id="ffmpeg推多路流"><a href="#ffmpeg推多路流" class="headerlink" title="ffmpeg推多路流"></a>ffmpeg推多路流</h5><ul>
+<li>使用管道方式输出多路流和使用tee进行多路流输出；</li>
+<li>使用管道方式推多路流可以一次编码，多次输出支持所得到的流；</li>
+<li><p>使用tee方式</p>
+<pre><code>./ffmpeg -re -i input.mp4 -vcodec libx264 -acodec aac -f flv &quot;tee:rtmp://publish.chinaffmpeg.com/live/stream1|rtmp://publish.chinaffmpeg.com/live/stream2&quot;
+</code></pre></li>
+<li>一次编码，输出两个字链接的tee协议，输出两路RTMP流。</li>
+</ul>
+<h5 id="ffmpeg-生成HDS流"><a href="#ffmpeg-生成HDS流" class="headerlink" title="ffmpeg 生成HDS流"></a>ffmpeg 生成HDS流</h5><ul>
+<li>ffmpeg支持文件列表方式的切片直播、点播流，除了HLS外，还支持HDS流切片格式。</li>
+</ul>
+<h5 id="ffmpeg-生成DASH"><a href="#ffmpeg-生成DASH" class="headerlink" title="ffmpeg 生成DASH"></a>ffmpeg 生成DASH</h5><ul>
+<li>也是列表方式的直播。</li>
+</ul>
+<h4 id="ffmpeg-滤镜使用"><a href="#ffmpeg-滤镜使用" class="headerlink" title="ffmpeg 滤镜使用"></a>ffmpeg 滤镜使用</h4><p>FFmpeg功能强大的主要原因是其包含了滤镜处理avfilter，FFmpeg的avfilter能够实现的音频、视频、字幕渲染效果数不胜数，并且时至今日还在不断地增加新的功能，除了本章介绍的内容之外，还可以从FFmpeg官方网站的文档页面获得FFmpeg的avfilter更多的信息。</p>
+<h4 id="ffmpeg-采集设备"><a href="#ffmpeg-采集设备" class="headerlink" title="ffmpeg 采集设备"></a>ffmpeg 采集设备</h4><p>我们可以了解到Linux、OS X、Windows上的设备采集方式，内容涉及fbdev、v4l2、x11grab、avfoundation、dshow、vfwcap、gdigrab等。</p>
+<p>###总评<br>除了熟悉下命令行，其余价值很低，配不上从入门到精通这种名字，因为没法精通</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <time datetime="2018-12-01T11:11:12.000Z"><a href="/2018/12/01/http/http2.0改造/">2018-12-01</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2018/12/01/http/http2.0改造/">图片下载支持http2.0改造方案关键点</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>iOS结合版在手Q6.7.0版本已经上线了http2.0下的图片下载的改造，取得了比较好的效果；Android结合版7.2.0 也针对图片下载做了http2.0的相关改造，简单输出下方案。</p>
+<p>###支持版本<br>相对于iOS必须在9.0以上版本才支持http2.0，Android侧需要5.0以上版本才能很好的支持ALPN(http2.0的协商协议，Android4.4到5.0之间有bug，SPDY使用的是NPN)的实现。<br>目前手q外网Android 5.0以上占比77.53%，加入版本控制即可。</p>
+<p>###网络库的选择</p>
+<p>####Httpclient VS HttpUrlConnection VS OKHttp</p>
+<ul>
+<li><p>Httpclient<br>目前是结合版downloader使用的网络库，主要是因为历史兼容性的考虑。google官方已经不推荐使用，Android6.0之后HttpClient是不是系统自带的了，不过它在最近的更新中将HttpClient的所有代码copy了一份进来，所以还能使用。目前也不太好支持http2.0/SPDY。</p>
+</li>
+<li><p>Httpurlconnection<br>从Android4.4起内部实现已经变成了OkHttp，但是默认当前版本spdy/http2.0是被禁用掉的。</p>
+<pre><code>https://android.googlesource.com/platform/external/okhttp/+/master/android/main/java/com/squareup/okhttp/HttpsHandler.java
+OkUrlFactory okUrlFactory = HttpHandler.createHttpOkUrlFactory(proxy);
+// All HTTPS requests are allowed.
+okUrlFactory.setUrlFilter(null);
+OkHttpClient okHttpClient = okUrlFactory.client();
+// Only enable HTTP/1.1 (implies HTTP/1.0). Disable SPDY / HTTP/2.0.
+okHttpClient.setProtocols(HTTP_1_1_ONLY);
+okHttpClient.setConnectionSpecs(Collections.singletonList(TLS_CONNECTION_SPEC));
+</code></pre></li>
+<li><p>OKHttp<br>Android官方实现用于替代HttpUrlConnection和Apache HttpClient,相关下载接口和原有的结合版DownLoader兼容难度比较小，支持spdy/http2.0，本身的连接池复用，gzip压缩，缓存响应数据等技术都比较成熟，目前手Q 已经有使用OKHttp2.5的jar包，可以适当改造，包大小的压力会小很多。</p>
+</li>
+</ul>
+<h3 id="当前相册后台方案"><a href="#当前相册后台方案" class="headerlink" title="当前相册后台方案"></a>当前相册后台方案</h3><h4 id="只支持Https-之前没有spdy的改造"><a href="#只支持Https-之前没有spdy的改造" class="headerlink" title="只支持Https,之前没有spdy的改造"></a>只支持Https,之前没有spdy的改造</h4><p>虽然http2.0可以支持明文传输，但是现在主流的浏览器，客户端，服务端主要还是支持的基于TLS部署的http2.0协议，目前结合版相册图片下载的服务器也只能支持TLS下的http2.0。下载结合版相册图片时必须用https访问才能走http2.0协议。</p>
+<p>###主要改造点</p>
+<p>####IP直连下的SNI<br>因为目前的http2.0的实现是基于https的访问，之前Downloader实现的https是不会走IP直连策略的，现在希望提高https访问性能，需要使用IP直连策略。默认情况下IP直连无法通过证书校验，主要是因为传输的domain并没有使用Header中的域名host，而是直接用的IP，所以会出现domain不匹配的情况，导致SSL/TLS握手不成功。这里通过修改OKHttp创建SSLSocket的实现，将IP直接替换成原来的域名，再进行证书校验，就可以实现IP直连下的HTTPS访问。</p>
+<pre><code>  //okhttp/src/main/java/com/squareup/okhttp/Connection.java
+  // Create the wrapper over the connected socket.
+sslSocket = (SSLSocket) sslSocketFactory.createSocket(
+        socket, address.getUriHost(), address.getUriPort(), true /* autoClose */);
+try {
+  sslSocket.setEnabledProtocols(new String[]{&quot;TLSv1&quot;, &quot;TLSv1.1&quot;, &quot;TLSv1.2&quot;});
+}catch(Exception e){
+}
+ConnectionSpec connectionSpec = connectionSpecSelector.configureSecureSocket(sslSocket);
+String currentHost=address.getUriHost();
+if (connectionSpec.supportsTlsExtensions()) {
+//对比address的header中的host和url中的host，如果发现不一致，即ip直连，则sni host设置为header中的host
+  if(address.headerHost!=null &amp;&amp; address.headerHost!=&quot;&quot;&amp;&amp; !address.headerHost.equals(currentHost)){
+    currentHost=address.headerHost;
+  }
+  //sni host设置，不然无法通过校验
+  Platform.get().configureTlsExtensions(
+          sslSocket, currentHost, address.getProtocols());
+}
+
+// Force handshake. This can throw!
+sslSocket.startHandshake();
+</code></pre><p>####30X重定向访问<br>Downloader的处理逻辑，重定向后header中仍然会保留之前的host域名，服务器会因为header中保留的之前的host域名和url中的host不一致而出错，这里需要修改OKHttp源码来实现。</p>
+<pre><code>//okhttp/src/main/java/com/squareup/okhttp/internal/http/HttpEngine.java
+ case HTTP_MULT_CHOICE:
+      case HTTP_MOVED_PERM:
+      case HTTP_MOVED_TEMP:
+      case HTTP_SEE_OTHER:
+        // Does the client allow redirects?
+        if (!client.getFollowRedirects()) return null;
+
+        String location = userResponse.header(&quot;Location&quot;);
+        if (location == null) return null;
+        HttpUrl url = userRequest.httpUrl().resolve(location);
+
+        // Don&apos;t follow redirects to unsupported protocols.
+        if (url == null) return null;
+
+        // If configured, don&apos;t follow redirects between SSL and non-SSL.
+        boolean sameScheme = url.scheme().equals(userRequest.httpUrl().scheme());
+        if (!sameScheme &amp;&amp; !client.getFollowSslRedirects()) return null;
+
+        // Redirects don&apos;t include a request body.
+        Request.Builder requestBuilder = userRequest.newBuilder();
+        if (HttpMethod.permitsRequestBody(userRequest.method())) {
+          requestBuilder.method(&quot;GET&quot;, null);
+          requestBuilder.removeHeader(&quot;Transfer-Encoding&quot;);
+          requestBuilder.removeHeader(&quot;Content-Length&quot;);
+          requestBuilder.removeHeader(&quot;Content-Type&quot;);
+        }
+        if (!sameConnection(url)) {
+  //修改原有的直连30X问题，一旦碰到30x的问题，先把header中的host移除
+  requestBuilder.removeHeader(&quot;Host&quot;);
+  requestBuilder.removeHeader(&quot;Authorization&quot;);
+}
+</code></pre><p>####线程池并发策略<br>Downloader因为历史原因一直使用的两个并发下载，http2.0相比http1.1的优势主要体现在多路复用上，这里需要逻辑中的资源锁，将http2.0情况下的并发提高到4。 对比iOS的策略是http1.1并发数系统限制最多为4，http2.0后放开并发数到6。</p>
+<p>####多并发情况下OKHttp同一域名创建多个http2.0连接问题<br>OKHttp 2.5本身存在同一时间发起多个同一域名下的请求时会出现多个socket连接，这里的原因是因为第一个请求发起后，创建相应连接后加入连接池需要很短的时间，第二个请求同时发起，无法在连接池中找到可以复用的连接，所以会创建多个连接。<br>这里的解决方案是直接给创建连接并加入连接池加锁，避免同一时间同时创建多个连接。</p>
+<pre><code>//okhttp/src/main/java/com/squareup/okhttp/internal/http/HttpEngine.java
+//防止多线程请求http2.0创建多个连接，因为创建connection不一定立马加入了pool，必须获取完立马塞到pool中，别的线程一定能获取到全部最新的连接池
+    if(address !=null &amp;&amp; address.getSslSocketFactory()!=null &amp;&amp;
+            client.getProtocols()!=null &amp;&amp; client.getProtocols().contains(Protocol.HTTP_2)) {
+      synchronized (client.getConnectionPool()) {
+        connection = createNextConnection();
+        Internal.instance.connectAndSetOwner(client, connection, this, networkRequest);
+      }
+    }else{
+      connection = createNextConnection();
+      Internal.instance.connectAndSetOwner(client, connection, this, networkRequest);
+    }
+</code></pre><h4 id="TLS完全握手改简短握手"><a href="#TLS完全握手改简短握手" class="headerlink" title="TLS完全握手改简短握手"></a>TLS完全握手改简短握手</h4><p><img src="http://i.imgur.com/VrZTzVb.jpg" alt="完全握手"><br><img src="http://i.imgur.com/8eoAn5v.png" alt="简短握手"></p>
+<ul>
+<li>iOS采用的是SSLSession ID的复用策略，Android采用的是SSLSession Ticket的策略。session Ticket的服用方式可以减少TLS握手的RTT次数，减少耗时。</li>
+<li><p>两者区别在于Session ticket较之Session ID优势在于服务器使用了负载均衡等技术的时候。Session ID往往是存储在一台服务器上，当我向不同的服务器请求的时候，就无法复用之前的加密参数信息，而Session ticket可以较好的解决此类问题，因为相关的加密参数信息交由客户端管理，服务器只要确认即可。</p>
+<pre><code>//okhttp/src/main/java/com/squareup/okhttp/internal/Platform.java
+//通过反射调用setUseSessionTickets为true，启用SSLSession Ticket复用
+@Override public void configureTlsExtensions(
+       SSLSocket sslSocket, String hostname, List&lt;Protocol&gt; protocols) {
+     // Enable SNI and session tickets.
+     if (hostname != null) {
+       setUseSessionTickets.invokeOptionalWithoutCheckedException(sslSocket, true);
+       setHostname.invokeOptionalWithoutCheckedException(sslSocket, hostname);
+     }
+
+     // Enable ALPN.
+     if (setAlpnProtocols != null &amp;&amp; setAlpnProtocols.isSupported(sslSocket)) {
+       Object[] parameters = { concatLengthPrefixed(protocols) };
+       setAlpnProtocols.invokeWithoutCheckedException(sslSocket, parameters);
+     }
+   }
+</code></pre></li>
+</ul>
+<h3 id="优化和测试数据分析"><a href="#优化和测试数据分析" class="headerlink" title="优化和测试数据分析"></a>优化和测试数据分析</h3><h4 id="http2-0-VS-http1-0"><a href="#http2-0-VS-http1-0" class="headerlink" title="http2.0 VS http1.0"></a>http2.0 VS http1.0</h4><p>####劣势</p>
+<ul>
+<li>https比http慢 空间相册的http2.0是基于https实现的，这里会增加TLS的握手和加解密耗时，可以参考我下图的数据。</li>
+</ul>
+<p>####优势</p>
+<ul>
+<li>并发数增加，连接数减少 http2.0 每个IP只建立一个tcp连接，通过虚拟流的方式来并发发送http请求，RFC7540 建议协议实现者支持最大流并发数不小于 100。 而 http1.1 一般通过创建多个连接来实现并发请求，创建连接对服务器和客户端都有资源消耗，连接数一般都比较小，这里iOS改造前是4个并发，Android改造前是2个并发。iOS调整为http2.0后会使用6个并发，Android在http2.0情况下使用4个并发。</li>
+<li>TLS Session复用</li>
+<li>头部压缩 索引表算法可以相比gzip等方式更有效率，相册请求头部内容较少，影响比较小。</li>
+<li>无队首阻塞 http2.0 的流都是通过一个个小的二进制帧在 tcp 连接上发送，不同流的帧互不影响，所以无 http1.1 的队首阻塞。</li>
+<li>TCP连接竞争 多个tcp连接之间会互相竞争，影响对应的tcp慢启动时间，对于拥塞和丢包恢复速度快。</li>
+<li>https更安全，防止数据被挟持破坏。</li>
+</ul>
+<p>####未使用的特性</p>
+<ul>
+<li>优先级设置</li>
+<li>服务器主动推送</li>
+</ul>
+<p>###实验数据<br>使用腾讯云WeTestWifi下载100张相册图片，对比http,https，http2.0的下载时间。</p>
+<p>####时间指标说明</p>
+<ul>
+<li>总耗时(平均每次) 表示从第一个任务加入队列到最后一个任务下载完成的总时间/下载文件数;</li>
+<li>等待时长(平均每次) 表示每个任务从加入队列到任务执行的平均等待时间；</li>
+<li>执行时长(平均每次) 表示每个任务从开始执行到下载完成的时间（写入文件的时间去除）;</li>
+<li>请求时长(平均每次) 包括创建连接，发出请求，读取response头部的时间；</li>
+<li>response读时长(平均每次) 表示读取response文件流的时间；<br>####实验数据<br><a href="https://docs.google.com/spreadsheets/d/1x9gANKCzJkn0lZTg7J1yno2N9uxoSo-zgvPUr94DqbE/edit#gid=0" target="_blank" rel="noopener">https://docs.google.com/spreadsheets/d/1x9gANKCzJkn0lZTg7J1yno2N9uxoSo-zgvPUr94DqbE/edit#gid=0</a><br><img src="http://i.imgur.com/GjpuqbW.png" alt="实验数据"><h4 id="结论分析："><a href="#结论分析：" class="headerlink" title="结论分析："></a>结论分析：</h4>优化效果图如下<br><img src="http://i.imgur.com/hbUakan.png" alt="实验数据"></li>
+<li>1.https确实影响了下载速度，TLS握手和加解密数据会导致同并发下的https/http2.0比http1.1慢很多； 参考同并发下得https和http1.1的对比可以看出TLS会增加耗时。</li>
+<li>2.http2.0提高并发后相比https/http1.1优势很明显； 参考图中任意网络延迟下的蓝色区域数据。</li>
+<li>3.同一并发下，网络延迟高的情况下，http2.0相比https/http1.1的优势反而会减少； 参考同并发下网络延迟为200/400ms的时候，http2.0甚至比https还要慢。</li>
+<li>4.具有并发数优势的http2.0相比http1.1在网络延迟高的情况下表现更优。 参考200/400ms延迟情况下，http2.0和http1.1并发分别为2,4的对比数据，延迟很高，但是优化的效果越好。<h3 id="外网结合版720数据"><a href="#外网结合版720数据" class="headerlink" title="外网结合版720数据"></a>外网结合版720数据</h3><img src="/2018/12/01/http/http2.0改造/720数据.png" alt="结合版720外网数据"></li>
+<li>下载总耗时提升比较明显，外网提升11.34%左右；</li>
+<li>成功率有所下降，分析原因是因为遍历网络策略调整的问题，结合版725已经做了部分优化来提高下载成功率，理论上成功率应该持平甚至有所优化；</li>
+<li>下载总耗时（包含等待时间）的优化效果和iOS的20%以上有差距，原因暂时定位是iOS的并发数wifi下提高到6，非wifi提高到4，而Android目前是统一从2提高到4，有所差距。<br>##后续计划</li>
+<li>1.目前手q的OKhttp版本2.5.0相对较老，对于http2.0的支持存在一些bug，比如刚才的多个socket连接的问题，新版在相关策略上有所优化，后续会考虑升级版本；</li>
+<li>2.目前是使用的httpclient和OKhttp做的ABtest的方案，OKhttp相对httpclient也有很多细节上的优化，可以考虑全部切换到OKhttp，对于包大小和耗时应该都能有所优化；</li>
+<li>3.持续分析外网的下载数据，提高对应的成功率和下载耗时；</li>
+</ul>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <time datetime="2018-11-05T11:11:12.000Z"><a href="/2018/11/05/ffmpeg/音视频编码基础和ffmpeg/">2018-11-05</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2018/11/05/ffmpeg/音视频编码基础和ffmpeg/">音视频编码基础和ffmpeg</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>雷霄骅csdn课程学习的浓缩总结,去除了编码细节，只强调主要概念和重点工具。<a href="https://blog.csdn.net/leixiaohua1020/article/details/47068015" target="_blank" rel="noopener">学习地址</a></p>
+<p>##音视频播放流程<br><img src="/2018/11/05/ffmpeg/音视频编码基础和ffmpeg/a.png" alt="视频播放流程"></p>
+<h3 id="主要概念"><a href="#主要概念" class="headerlink" title="主要概念"></a>主要概念</h3><ol>
+<li>封装格式（AVI,mp4,TS,FLV,MKV,RMVB） ;</li>
+<li>视频编码格式(HEVC、H.264、MPEG4、MEPEG2、VP9、VP8、VC-1);</li>
+<li>音频编码格式（AAC，MP3等）;</li>
+<li>视频像素数据(RGB24、RGB32、YUV420P、YUV422P、YUV444P；实际视频都是用的YUV);</li>
+<li>音频采样数据（PCM无损数据）。</li>
+</ol>
+<h3 id="码率"><a href="#码率" class="headerlink" title="码率"></a>码率</h3><p>编码后一秒的数据量，低就不清晰，高就会质量好。</p>
+<p>###H.264</p>
+<ol>
+<li>序列&gt;图像(帧)&gt;片组&gt;片&gt;NALU&gt;宏块&gt;亚宏块&gt;块像素</li>
+<li>DCT-&gt;量化-&gt;帧内预测-&gt;帧间预测-&gt;熵编码-&gt;环路滤波等</li>
+<li>图像数据压缩100倍以上</li>
+</ol>
+<h3 id="AAC-：主流音频处理"><a href="#AAC-：主流音频处理" class="headerlink" title="AAC ：主流音频处理"></a>AAC ：主流音频处理</h3><p>将PCM采样音频数据压缩10倍以上。</p>
+<h3 id="RGB24大小示例"><a href="#RGB24大小示例" class="headerlink" title="RGB24大小示例"></a>RGB24大小示例</h3><p>一小时体积3600<em>25</em>1920<em>1080</em>3 = 559.9GByte<br>频率家定位25Hz，采样精度为8bit，即1个点就是8比特的数据。</p>
+<ul>
+<li>BMP就是存储的RGB格式的像素数据。</li>
+</ul>
+<h3 id="YUV"><a href="#YUV" class="headerlink" title="YUV"></a>YUV</h3><p>先存整张图片的Y信息，再存U的信息，再存V的信息，所以读取可以按一张图一张图去读<br>常用YUV420数据格式<br>4:4:4 表示4个像素点采样4个Y信息，4个Cb和4个Cr，所以整体像素点单位的3倍<br>4:2:2 代表4个像素点采样4个Y信息，2个Cb和2个Cr<br>4:2:0 表示4个像素点采样4个Y信息，横纵向各只有一个Cb/Cr，所以整体像素点单位的1.5倍，一般两个Y共用相邻的Cb和Cr。</p>
+<p>###PCM大小示例<br>4分钟的PCM<br>4<em>60</em>44100<em>2（双声道）</em>2（采样精度） = 42.3MByte<br>采样率是44100HZ常规参数，采样精度为16bit一个</p>
+<h3 id="PCM"><a href="#PCM" class="headerlink" title="PCM"></a>PCM</h3><p>如果是单声道，依次存储就好了；如果是双声道，左右声道交错存储</p>
+<h2 id="工具类"><a href="#工具类" class="headerlink" title="工具类"></a>工具类</h2><ul>
+<li>MediaInfo可以用来查看视频综合信息</li>
+<li>YUV Player可以查看视频像素数据（没有头文件，需要自己打开后在参数中指定高宽和YUV格式）</li>
+<li>视频播放器vlc、movist</li>
+<li>封装工具格式查看器 Elecard Format Analyzer</li>
+<li>视频编码格式查看器 Elecard Stream Eye</li>
+</ul>
+<p><img src="/2018/11/05/ffmpeg/音视频编码基础和ffmpeg/b.png" alt="视频编码格式查看"></p>
+<ul>
+<li>音频采样数据查看工具：Adobe Audition（没有头文件，需要自己打开后在参数中指定采样率、声道和采样精度）</li>
+</ul>
+<h2 id="ffmpeg命令行学习"><a href="#ffmpeg命令行学习" class="headerlink" title="ffmpeg命令行学习"></a>ffmpeg命令行学习</h2><ul>
+<li><a href="https://www.ffmpeg.org/ffmpeg.html" target="_blank" rel="noopener">官方文档</a></li>
+<li>样例比如ffmpeg -i input.mp4 -i logo.png -filter_complex “[1:v]scale=50:50[a];[0:v][a]overlay=0:0” output.mp4<br>将图片放到视频每一帧的左上角；</li>
+<li>ffmpeg -i stream1 -i stream2 -i zbxh1.png -filter_complex “[1:v][2:v]overlay=W-w:H-h[a];[0:v]drawbox=0:0:240:162:<a href="mailto:black@0.5" target="_blank" rel="noopener">black@0.5</a>[b];[b][a]overlay=0:0” -acodec aac -ac 1 -vcodec libx264 -deblock 0 -f flv rtmp://localhost:1935/myapp/test 把输入的视频文件换成流地址（亲测过http,rtmp,rtsp等的同种叠加和混搭），把保存的文件换成推送的地址，最后指明编码器等参数。<br>其中-deblock 0 选项是“去块效应”的，以免视频编码完成后产生块效应。</li>
+</ul>
+<h3 id="ffplay"><a href="#ffplay" class="headerlink" title="ffplay"></a>ffplay</h3><p>简单播放工具，可以学习下<a href="https://www.ffmpeg.org/ffplay.html" target="_blank" rel="noopener">官方文档</a></p>
+<p>###ffmpeg关键类库（八大金刚）</p>
+<ul>
+<li>avcodec ：编解码</li>
+<li>avformat：封装格式处理</li>
+<li>avfilter：滤镜特效处理</li>
+<li>avdevice：各种设备输入输出；</li>
+<li>avutil：工具库（大部分库都需要这个库支持）</li>
+<li>postproc：后加工</li>
+<li>swresample：音频采样数据格式转换</li>
+<li>swscale： 视频像素数据格式转换；<br>###ffmpeg解码数据结构<br><img src="/2018/11/05/ffmpeg/音视频编码基础和ffmpeg/c.png" alt="解码数据结构"></li>
+</ul>
+<ul>
+<li>AVFormatContext 最外层封装结构上下文；<ul>
+<li>iformat 输入视频的 AVInputFormat</li>
+<li>nb_streams 流数量</li>
+<li>streams 流的数组</li>
+<li>duration：时长</li>
+<li>bit_rate ：码率</li>
+</ul>
+</li>
+<li>AVInputFormat指明封装格式<ul>
+<li>name 封装格式名称</li>
+<li>long_name:封装格式的长名称</li>
+<li>extensions：封装格式扩展名</li>
+<li>id：封装格式ID </li>
+</ul>
+</li>
+<li>AVStream主要是视频流和音频流，0一般是视频流，1为音频流<ul>
+<li>id序号</li>
+<li>codec：流对应 AVCodecContext</li>
+<li>time_base:该流的时基础，记录时间播放的基数，比如1s</li>
+<li>r_frame_rate：1s有多少画面</li>
+</ul>
+</li>
+<li>AVCodecContext 处理编解码上下文<ul>
+<li>codec：编解码的     AVCodec</li>
+<li>width、height</li>
+<li>pix_fmt：像素格式（针对视频）</li>
+</ul>
+</li>
+<li>AVCodec 解码格式解码器<ul>
+<li>name</li>
+<li>long_name</li>
+<li>type</li>
+<li>id     </li>
+</ul>
+</li>
+</ul>
+<h4 id="基础数据结构"><a href="#基础数据结构" class="headerlink" title="基础数据结构"></a>基础数据结构</h4><p>AVPacket(解码前压缩数据)-&gt;AVFrame（解码后的数据）</p>
+<h5 id="AVPacket"><a href="#AVPacket" class="headerlink" title="AVPacket"></a>AVPacket</h5><ul>
+<li>pts：显示时间戳，只能是整数，单位是对应的时间基数AVStream的time_base；</li>
+<li>dts：解码时间戳（解码顺序和显示顺序不一样）</li>
+<li>data：压缩编码数据</li>
+<li>size：压缩编码数据大小</li>
+<li>stream_index:所属的AVStream</li>
+</ul>
+<h5 id="AVFrame"><a href="#AVFrame" class="headerlink" title="AVFrame"></a>AVFrame</h5><ul>
+<li>data：解码后的图像数据（音频采样数据）</li>
+<li>linesize：对视频是图像一行像素大小，对音频是整个音频帧大小</li>
+<li>width、height（专用于视频）</li>
+<li>key_frame：是否是关键帧（只对视频有用）</li>
+<li>pict_type:帧类型（I、P、B专用于视频）</li>
+</ul>
+<h5 id="sws-scale"><a href="#sws-scale" class="headerlink" title="sws_scale"></a>sws_scale</h5><p>这是解码最后的一步，解码出来之后不是最终的分辨率，比如原本480X320，输出520X480，需要进行裁剪去除黑边。</p>
+<h2 id="SDL（Simple-DirectMedia-Layer）视频显示"><a href="#SDL（Simple-DirectMedia-Layer）视频显示" class="headerlink" title="SDL（Simple DirectMedia Layer）视频显示"></a>SDL（Simple DirectMedia Layer）视频显示</h2><ul>
+<li>封装复杂音视频底层交互，简化音视频处理难度。</li>
+<li>跨平台、开源</li>
+<li>主要用于做游戏的<br>SDL架构图<br><img src="/2018/11/05/ffmpeg/音视频编码基础和ffmpeg/d.png" alt="SDL架构图"><br>SDL流程图<br><img src="/2018/11/05/ffmpeg/音视频编码基础和ffmpeg/e.png" alt="SDL流程图"></li>
+</ul>
+<p>###核心结构<br><img src="/2018/11/05/ffmpeg/音视频编码基础和ffmpeg/f.png" alt="SDL视频数据结构图"></p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <time datetime="2016-05-08T06:11:12.000Z"><a href="/2016/05/08/减包/利用Eclipse JDT减少方法数和包大小/">2016-05-08</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2016/05/08/减包/利用Eclipse JDT减少方法数和包大小/">利用Eclipse JDT减少方法数和包大小</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>在尝试了 <a href="/2016/05/02/减包/分析Dalvik字节码进行减包优化/">去除变量初始化赋值冗余代码</a> 的方式减包后，团队减包压力依旧很大。参考了手Q团队提出的减方法数的建议后，我想到了将原有代码的private方法/变量变成package方法/变量的方案来减小包大小，主要是通过Eclipse JDT分析java语法树，不修改本地代码，只是在项目代码构建过程中动态修改java代码，从而减小包大小。最终效果是减少包大小150k左右，并且不会影响手Q本身代码的行数以及代码的可维护性，缺点是会增加项目代码构建的时间，目前是50s左右。很遗憾，最后手Q基础团队因为方案会增加构建时间的缺陷，没有采用。本篇文章主要是介绍去除private的思路以及用Eclipse JDT来实现构建过程中动态修改代码。</p>
+<p>ps：手Q整个项目都是在RDM平台上构建的，每次构建之前都会将revert并update到最新版本，所以我才会提出在构建时动态修改java代码，可以避免修改工程本地的代码，private直接去除会给项目开发人员带来不便。</p>
+<p>##手Q提出的减Android方法数的建议<br>手Q团队很早就提出了<a href="http://www.iteye.com/topic/1142147" target="_blank" rel="noopener">减少Android方法数的建议</a>的方案，其中针对private的建议如下：</p>
+<h3 id="避免在内部类中访问外部类的私有方法-变量"><a href="#避免在内部类中访问外部类的私有方法-变量" class="headerlink" title="避免在内部类中访问外部类的私有方法/变量"></a>避免在内部类中访问外部类的私有方法/变量</h3><p>当在java内部类（包括内部匿名类）中访问外部类的私有方法/变量时，编译器会生成额外的方法，这也会增加方法数，建议编码时尽量避免。<br>这里是java编译器对内部类的处理方式决定的，为了让内部类能够访问外部类的数据成员，java编译器会为外部类自动生成 static Type access$iii(Outer); 方法，供内部类调用。</p>
+<h2 id="将private方法-变量变成package"><a href="#将private方法-变量变成package" class="headerlink" title="将private方法/变量变成package"></a>将private方法/变量变成package</h2><p>参考手Q减少方法数的建议，将java原有的private方法/变量改成package，可以避免因内部类访问外部类私有方法/变量使得编译器产生额外的方法，从而减少包大小，减少方法数。该方案相对于将private变成public权限等其它方案实现起来简单，出现问题几率较小。</p>
+<p>##常见问题与解答</p>
+<p>###问题1：同一个包名下的类继承关系会导致private移除后出现方法重载失败。以及 同一个包名下的类继承关系会导致private移除后出现访问权限错误。<br>方式是通过Eclipse JDT将源代码解析成AST（抽象语法树，Abstract SyntaxTree可以用来分析代码）的语法树结构，记录了同一个包名下的方法名，如果出现同名，就不会去移除对应的private，保证了程序的鲁棒性，不会产生因重载失败和private导致构建失败的问题。</p>
+<p>###问题2：移除private可能导致代码行数变化，不便外网追踪问题。<br>方式是通过Eclipse JDT分析对应的语法树，通过patch的方式去修改代码，从而只是移除private，而不会导致代码行数变化，外网如果出现问题，还是可以根据代码行数追踪问题。</p>
+<p>###问题3：移除private是否影响反射。<br>否，private本身就是需要通过getDeclaredMethod 以及getDeclaredField来反射获取值的，改成package不需要调整获取方式。</p>
+<p>###问题4：包名相同的jar包和工程代码，如果出现问题1中的private的继承问题，怎么办？。<br>目前没办法处理，因为AST只能分析java代码，没法分析和调整java字节码，方案是有缺陷的，会导致问题。但是一旦出问题，就会构建失败，也很容易发现问题的原因。</p>
+<p>###问题5：将private变成package，代码不会难看么？<br>手Q整个项目都是在RDM平台上构建的，每次构建之前都会将代码revert并update到最新版本。基于JDT在构建时动态修改java代码，本地代码不会变化，还是有private，只是在编译时动态修改，实现减包大小和方法数。</p>
+<p>##Eclipse JDT的使用<br>AST（Abstract Syntax Tree，抽象语法树）经常被用于语法分析，实现涉及到编译原理底层的东西。AST使用树状结构表示源代码的抽象语法结构，可以用于代码分析，重构等方面。很多工具尤其是编译器，都会自动将源代码转换为AST，不同的工具实现方式和定义不一样。其中Eclipse使用的就是Eclipse JDT的方式对java代码进行分析。</p>
+<p>利用Eclipse JDT可以把java源代码变成AST抽象语法树，方便分析java类的的方法，变量等，也可以修改对应代码。入门文档可以参考<a href="http://blog.csdn.net/flying881114/article/details/6187061" target="_blank" rel="noopener">Eclipse JDT–AST入门</a>、<a href="http://blog.csdn.net/lovelion/article/details/18953869" target="_blank" rel="noopener">AST与ASTView简介</a>以及<a href="http://blog.csdn.net/lovelion/article/details/19050155" target="_blank" rel="noopener">AST的获取与访问</a>。<br>网上的相应资料比较少，大致列举如上这些就可以有些粗略的了解了。这些文档可以让你对AST的语法树，Eclipse JDT对AST的访问方式（包括ASTNode和ASTVisitor两种形式的访问方式）有些深入的了解。</p>
+<p>##关键代码逻辑</p>
+<p>###通过patch的方式去修改代码，以免改动代码行数</p>
+<pre><code>private static final Map&lt;String, String&gt; formatterOptions = DefaultCodeFormatterConstants.getEclipseDefaultSettings();
+static {
+    formatterOptions.put(JavaCore.COMPILER_COMPLIANCE, JavaCore.VERSION_1_7);
+    formatterOptions.put(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, JavaCore.VERSION_1_7);
+    formatterOptions.put(JavaCore.COMPILER_SOURCE, JavaCore.VERSION_1_7);
+    formatterOptions.put(DefaultCodeFormatterConstants.FORMATTER_TAB_CHAR, JavaCore.SPACE);
+    formatterOptions.put(DefaultCodeFormatterConstants.FORMATTER_TAB_SIZE, &quot;2&quot;);
+    //指定代码每行代码最大字数，如果修改代码，会使单行代码变长会影响代码行数。
+    formatterOptions.put(DefaultCodeFormatterConstants.FORMATTER_LINE_SPLIT, &quot;200&quot;);
+    formatterOptions.put(DefaultCodeFormatterConstants.FORMATTER_JOIN_LINES_IN_COMMENTS, DefaultCodeFormatterConstants.FALSE);
+    // change the option to wrap each enum constant on a new line
+    formatterOptions.put(
+        DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_ENUM_CONSTANTS,
+        DefaultCodeFormatterConstants.createAlignmentValue(
+        true,
+        DefaultCodeFormatterConstants.WRAP_ONE_PER_LINE,
+        DefaultCodeFormatterConstants.INDENT_ON_COLUMN));
+}
+
+//按照特定的formatter格式保存代码
+public static void saveCuDiffToFile(String path,String source,CompilationUnit cu){
+    Document document = new Document(source);
+    TextEdit edits = cu.rewrite(document, formatterOptions); //树上的变化生成了像diff一样的东西
+    try {
+        edits.apply(document);
+        toFile(document.get(),path);
+    } catch (MalformedTreeException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+    } catch (BadLocationException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+    } //应用diff
+
+}
+</code></pre><p>###去除变量初始化赋值代码</p>
+<pre><code>if(!ModifierSet.isFinal(iModifier) &amp;&amp; !node.isInterface()){
+    List fragments=field.fragments();
+    Type type=field.getType();
+    for(Object obj:fragments){
+            VariableDeclarationFragment f=(VariableDeclarationFragment)obj;
+            Expression ex=f.getInitializer();
+            if(ex!=null &amp;&amp; type instanceof PrimitiveType){
+                    if(ex instanceof NumberLiteral &amp;&amp; (&quot;0&quot;.equals(((NumberLiteral) ex).getToken())
+                            ||&quot;0.0f&quot;.equals(((NumberLiteral) ex).getToken())||&quot;0.0F&quot;.equals(((NumberLiteral) ex).getToken())
+                            ||&quot;0.0d&quot;.equals(((NumberLiteral) ex).getToken())||&quot;0.0D&quot;.equals(((NumberLiteral) ex).getToken())
+                            ||&quot;0.0l&quot;.equals(((NumberLiteral) ex).getToken())||&quot;0.0L&quot;.equals(((NumberLiteral) ex).getToken()))){
+                        f.setInitializer(null);
+                    }
+                    if(ex instanceof BooleanLiteral &amp;&amp; ((BooleanLiteral) ex).booleanValue()==false){
+                        f.setInitializer(null);
+                    }
+            }
+            if(ex!=null &amp;&amp; type instanceof SimpleType &amp;&amp; ex instanceof NullLiteral){
+                f.setInitializer(null);
+            }
+    }
+}
+</code></pre><h3 id="去除private变量"><a href="#去除private变量" class="headerlink" title="去除private变量"></a>去除private变量</h3><pre><code>for(FieldDeclaration field:node.getFields()){
+            int iModifier=field.getModifiers();
+            if(ModifierSet.isPrivate(iModifier)){
+                List modifiers=field.modifiers();
+                for(Object obj:modifiers){
+                    if(obj instanceof Modifier){
+                        Modifier modifer =(Modifier)obj;
+                        if(modifer.isPrivate()){
+                            modifiers.remove(obj);
+                            break;
+                        }
+                    }
+                }
+        }
+ }
+</code></pre><p>###去除private方法<br>对于private方法的去除需要考虑同一个包下的继承关系带来的冲突以及重写函数带来的冲突。<br>比如同一个包下存在如下情况，一旦都将private变成package，就会出现重写冲突，导致编译失败。<br>        package com.tencent;</p>
+<pre><code>public class A extends B{
+    private void test(){
+
+    }
+}
+
+package com.tencent;
+public class B {
+     private int test(){
+        return 0;
+    }
+}
+</code></pre><p>代码思路主要是通过<br>        public class ASTClass {<br>            public String packageName;<br>            public String parentName;<br>            public String clazzName;<br>            public ArrayList<string> funcs=new ArrayList&lt;&gt;();<br>        }<br>的结构记录每个java类，对于整个项目代码的处理分两步：</string></p>
+<ul>
+<li>第一步是扫描和分析同一个包目录下java文件，得到对应的ASTClass；</li>
+<li>第二步是根据第一步包目录的ASTClass扫描结果,决定当前的java文件是否需要将对应的private变成package，如果在同一个包目录下有继承关系并且存在同名函数，就不会进行修改。</li>
+</ul>
+<p>但是限于JDT只能对java代码进行分析，如果包名相同的jar包和工程代码中存在上述的private方法冲突问题，确实就会导致程序被JDT优化后编译失败的情况，这里鲁棒性还是始终不够的，这是原理上的问题。</p>
+<p>##减包代码开源以及使用<br><a href="https://github.com/frostpeng/CodeReducer" target="_blank" rel="noopener">CodeReducer的代码</a></p>
+<p>###使用：<br>运行java程序，传入参数为优化工程的根目录，如果设置CodeReducer中的needPrintResult为true，会在运行目录下生成codelog.txt，其中记录有所有的代码修改。</p>
+<p>##其它优化方向<br>目前我提出的优化主要还是在java代码级别进行修改，减少编译后的方法数和包大小，其实可以尝试用java的ASM字节码框架（基于class层面）或者ASMDex（基于dex层面）。</p>
+<p>ASM目前的缺陷是针对class修改字节码后可能出现编译通过但是运行崩溃得去那个框，缺少有力的测试验证方式。<br>ASMDex 目前框架自身bug比较多，暂时也不太想去踩坑，大家有兴趣可以研究下。</p>
+<p>##优化后感<br>本方案优化效果还是不错的，既可以减包大小，也能减方法数，而且能实现在编译时动态修改java代码，避免因为去掉private代码变得非常难看。但是因为动态编译以及只能在java层作优化，而无法修改jar包的代码，鲁棒性还存在一定问题，并且会导致编译时间加长，大家自行斟酌是否需要在自己的项目中使用本方案。</p>
+<p>虽然最终这套减包方案没有在手q中应用，但在研究的过程中也学习到了很多东西。重要的是完成这件事的过程，而不仅仅是这件事的结果。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <time datetime="2016-05-02T06:11:12.000Z"><a href="/2016/05/02/减包/分析Dalvik字节码进行减包优化/">2016-05-02</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2016/05/02/减包/分析Dalvik字节码进行减包优化/">分析Dalvik字节码进行减包优化</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Android结合版QQ空间最近几个版本在包大小配额上超标了，先后采用了包括图片压缩，功能H5，无用代码移除等手段减包，还是有着很大的减包压力。组内希望我能从代码的角度减少一些包大小，感觉有点压力山大。经过一段时间对手q安装包反编译后的Dalvik字节码的分析，发现通过调整Java代码可以减少编译后的Dalvik字节码，从而减少包大小。在这方面我做了许多的尝试，有成功有失败，拿出来给大家分享分享，多拍砖多交流。</p>
+<p>##优化思路</p>
+<ul>
+<li>通过dexdump反编译apk中的dex，得到对应Dalvik字节码，找到寻找冗余的字节码，尝试去除或替换冗余的字节码</li>
+<li>目前主要是替换或去除原有的java代码，减少对应的Dalvik指令，从而减少安装包大小。</li>
+<li>现在主要是从Dalvik字节码分析来调整Java代码，之后希望能够通过ASM等框架直接调整字节码减少现在的包大小。</li>
+</ul>
+<p>##优化效果</p>
+<ul>
+<li>去除初始化赋值方案 ————减少整个手q的发布包大小<strong>80k</strong>左右。</li>
+<li>插桩函数优化———减少整个手q的发布包大小<strong>2k</strong>左右。</li>
+<li>其它尝试方案，包括字符串拼接、移除interface很多空方法等，因为效果比较小、难以统一修改等问题，只是列举下分析结果，大家如果项目中出现的量比较多也是可以尝试去优化的。</li>
+</ul>
+<p>##优化方案如下：</p>
+<p>###<strong>1、去除初始化赋值冗余</strong></p>
+<p>####1.1、问题分析:</p>
+<ul>
+<li><p>静态变量为类的所有对象共享，在类加载的准备阶段就会初始设置为系统零值（如下图）,比如String被设置初始值为null，而在类中存在</p>
+<pre><code>public static String A=null;
+</code></pre></li>
+</ul>
+<p>这样的赋值行为会在之后的<cinit>()类构造器方法中执行，重复设置String A为null，增加了对应的<cinit>()方法的Dalvik指令，没有必要，可以干掉。</cinit></cinit></p>
+<ul>
+<li><p>成员变量在对象创建内存分配完成后，对应的内存空间会被初始设置为系统零值(和静态变量一样)，比如int类型被设置为0,而在类中存在</p>
+<p>   public int B=0;</p>
+</li>
+</ul>
+<p>这样的赋值行为会在之后的<init>()对象构造方法中执行，重复设置int B为0，增加了对应的<init>方法中的Dalvik指令，没有必要，可以干掉。</init></init></p>
+<p><img src="/2016/05/02/减包/分析Dalvik字节码进行减包优化/初始化赋值.jpg" alt="系统零值"></p>
+<ul>
+<li><p>对于初始化赋值为系统分配默认零值的静态变量和成员变量，去掉初始化赋值，直接使用系统赋的系统零值，可以减少<cinit>和<init>中的Dalvik指令，从而减少包大小，而且可以提高类加载和对象创建的效率。    </init></cinit></p>
+<pre><code>public static String A=null;    改成 public static String A；
+public int B=0;  改成 public int B;
+</code></pre></li>
+</ul>
+<p>####1.2、优化要点</p>
+<ul>
+<li>注意对于static final的变量必须赋初值；</li>
+<li>interface的变量都是static final类型的；</li>
+<li>注意只有赋值为系统赋予的零值的静态变量和成员变量才能按照这种方式优化，其它比如局部变量的改动会导致编译不通过等问题。</li>
+</ul>
+<p>####1.3、冗余示例：<br>优化前</p>
+<pre><code>public class FrostTest {
+        public int report_posi=0;
+        public FrostTest(){
+        }
+}
+</code></pre><p>对应字节码：</p>
+<pre><code>0795b4:                                        |[0795b4] com.example.frosttest.FrostTest.&lt;init&gt;:()V
+0795c4: 7010 5925 0100                         |0000: invoke-direct {v1}, Ljava/lang/Object;.&lt;init&gt;:()V // method@2559
+0795ca: 1200                                   |0003: const/4 v0, #int 0 // #0
+0795cc: 5910 c909                              |0004: iput v0, v1, Lcom/example/frosttest/FrostTest;.report_posi:I // field@09c9
+0795d6: 0e00                                   |0009: return-void
+</code></pre><p>优化后：</p>
+<pre><code>public class FrostTest {
+        public int report_posi;
+        public FrostTest(){
+        }
+}
+</code></pre><p>对应字节码</p>
+<pre><code>0795b4:                                        |[0795b4] com.example.frosttest.FrostTest.&lt;init&gt;:()V
+0795c4: 7010 5925 0000                         |0000: invoke-direct {v0}, Ljava/lang/Object;.&lt;init&gt;:()V // method@2559
+0795ca: 0e00                                   |0003: return-void
+</code></pre><p>减少了两行Dalvik指令的执行，最后分析结果平均优化一处可以减少安装包8个字节左右。</p>
+<p>####1.4、优化结果：<br>目前在手Q6.3.0分支上利用自行写的过滤脚本（可以私下找我要对应的优化脚本用于对应的工程）可以看到优化的效果，如果对整个手q执行这个方案，预计能够<strong>优化80k左右，修改了4677个文件，修改了17164处冗余</strong>。</p>
+<h3 id="2、调整插桩对应的代码"><a href="#2、调整插桩对应的代码" class="headerlink" title="2、调整插桩对应的代码"></a><strong>2、调整插桩对应的代码</strong></h3><p>Qzone补丁包引入了插桩这一步，需要在所有qzone类的构造函数中加入对mqq.app.MobileQQ类的引用。<br>优化的方案是将插桩插入到对象构造函数中的语句由</p>
+<pre><code>CtConstructor localCtConstructor = arrayOfCtConstructor[0];
+localCtConstructor.insertBeforeBody(&quot;if (com.qzone.dalvikhack.NotDoVerifyClasses.DO_VERIFY_CLASSES) System.out.print(mqq.app.MobileQQ.class);&quot;);
+localCtClass.writeFile(str);
+</code></pre><p>改为<br>    CtConstructor localCtConstructor = arrayOfCtConstructor[0];<br>    localCtConstructor.insertBeforeBody(“if (com.qzone.dalvikhack.NotDoVerifyClasses.DO_VERIFY_CLASSES) mqq.app.MobileQQ.class.getName();”);<br>    localCtClass.writeFile(str);</p>
+<p>以Qzone某个类的<init>为例，由原本的字节码</init></p>
+<pre><code>0e640c:                                        |[0e640c] ADV_REPORT.E_REPORT_POSITION.&lt;init&gt;:()V
+0e641c: 7010 0b84 0200                         |0000: invoke-direct {v2}, Ljava/lang/Object;.&lt;init&gt;:()V // method@840b
+0e6422: 6300 1f26                              |0003: sget-boolean v0, Lcom/qzone/dalvikhack/NotDoVerifyClasses;.DO_VERIFY_CLASSES:Z // field@261f
+0e6426: 3800 0900                              |0005: if-eqz v0, 000e // +0009
+0e642a: 6200 4463                              |0007: sget-object v0, Ljava/lang/System;.out:Ljava/io/PrintStream; // field@6344
+0e642e: 1c01 2a14                              |0009: const-class v1, Lmqq/app/MobileQQ; // type@142a
+0e6432: 6e20 7883 1000                         |000b: invoke-virtual {v0, v1}, Ljava/io/PrintStream;.print:(Ljava/lang/Object;)V // method@8378
+0e6438: 0e00                                   |000e: return-void
+</code></pre><p>变成了</p>
+<pre><code>0e63a4:                                        |[0e63a4] ADV_REPORT.E_REPORT_POSITION.&lt;init&gt;:()V
+0e63b4: 7010 8183 0100                         |0000: invoke-direct {v1}, Ljava/lang/Object;.&lt;init&gt;:()V // method@8381
+0e63ba: 6300 0326                              |0003: sget-boolean v0, Lcom/qzone/dalvikhack/NotDoVerifyClasses;.DO_VERIFY_CLASSES:Z // field@2603
+0e63be: 3800 0700                              |0005: if-eqz v0, 000c // +0007
+0e63c2: 1c00 6714                              |0007: const-class v0, Lmqq/app/MobileQQ; // type@1467
+0e63c6: 6e10 2883 0000                         |0009: invoke-virtual {v0}, Ljava/lang/Class;.getName:()Ljava/lang/String; // method@8328
+0e63cc: 0e00                                   |000c: return-void
+</code></pre><p>这里替换一处代码，将System.out.print改成getName，可以减少对象构造函数的一行Dalvik指令，替换了1314处初始化函数中插入的代码，最终将对应的qzone_plugin.apk减少了2459字节，整个手q减少2457字节左右。<font color="#FF0000">一行代码，2k收益</font>，其实还是很划算的。</p>
+<h3 id="3、字符串拼接"><a href="#3、字符串拼接" class="headerlink" title="3、字符串拼接"></a><strong>3、字符串拼接</strong></h3><p>下面是我针对String拼接的特殊情况“变量+”””和“””+变量”的不同形式举例分析Dalvik字节码。</p>
+<pre><code>public abstract class FrostTest implements FrostInterface{
+public String a=&quot;f&quot;;
+public int b=1;
+@Override
+public void doSth1() {
+    Log.i(&quot;frostpeng&quot;, a);
+}
+
+@Override
+public void doSth2() {
+    // TODO Auto-generated method stub
+    Log.i(&quot;frostpeng&quot;, a+&quot;&quot;);
+}
+
+@Override
+public void doSth3() {
+    // TODO Auto-generated method stub
+    Log.i(&quot;frostpeng&quot;, &quot;&quot;+a);
+}
+
+@Override
+public void doSth4() {
+    // TODO Auto-generated method stub
+    Log.i(&quot;frostpeng&quot;, String.valueOf(a));
+}
+
+@Override
+public void doSth5() {
+    // TODO Auto-generated method stub
+    Log.i(&quot;frostpeng&quot;, String.valueOf(b));
+}
+
+public void doSth6() {
+    // TODO Auto-generated method stub
+    Log.i(&quot;frostpeng&quot;, b+&quot;&quot;);
+}
+
+public void doSth7() {
+    // TODO Auto-generated method stub
+    Log.i(&quot;frostpeng&quot;, &quot;&quot;+b);
+}
+
+}
+</code></pre><p>字节码</p>
+<pre><code>098ee4:                                        |[098ee4] com.example.frosttest.FrostTest.doSth1:()V
+098ef4: 1a00 b715                              |0000: const-string v0, &quot;frostpeng&quot; // string@15b7
+098ef8: 5421 c809                              |0002: iget-object v1, v2, Lcom/example/frosttest/FrostTest;.a:Ljava/lang/String; // field@09c8
+098efc: 7120 a321 1000                         |0004: invoke-static {v0, v1}, Landroid/util/Log;.i:(Ljava/lang/String;Ljava/lang/String;)I // method@21a3
+098f02: 0e00                                   |0007: return-void
+
+098f04:                                        |[098f04] com.example.frosttest.FrostTest.doSth2:()V
+098f14: 1a00 b715                              |0000: const-string v0, &quot;frostpeng&quot; // string@15b7
+098f18: 2201 2f05                              |0002: new-instance v1, Ljava/lang/StringBuilder; // type@052f
+098f1c: 5432 c809                              |0004: iget-object v2, v3, Lcom/example/frosttest/FrostTest;.a:Ljava/lang/String; // field@09c8
+098f20: 7110 a225 0200                         |0006: invoke-static {v2}, Ljava/lang/String;.valueOf:(Ljava/lang/Object;)Ljava/lang/String; // method@25a2
+098f26: 0c02                                   |0009: move-result-object v2
+098f28: 7020 a525 2100                         |000a: invoke-direct {v1, v2}, Ljava/lang/StringBuilder;.&lt;init&gt;:(Ljava/lang/String;)V // method@25a5
+098f2e: 6e10 b125 0100                         |000d: invoke-virtual {v1}, Ljava/lang/StringBuilder;.toString:()Ljava/lang/String; // method@25b1
+098f34: 0c01                                   |0010: move-result-object v1
+098f36: 7120 a321 1000                         |0011: invoke-static {v0, v1}, Landroid/util/Log;.i:(Ljava/lang/String;Ljava/lang/String;)I // method@21a3
+098f3c: 0e00                                   |0014: return-void
+
+098f40:                                        |[098f40] com.example.frosttest.FrostTest.doSth3:()V
+098f50: 1a00 b715                              |0000: const-string v0, &quot;frostpeng&quot; // string@15b7
+098f54: 2201 2f05                              |0002: new-instance v1, Ljava/lang/StringBuilder; // type@052f
+098f58: 7010 a325 0100                         |0004: invoke-direct {v1}, Ljava/lang/StringBuilder;.&lt;init&gt;:()V // method@25a3
+098f5e: 5432 c809                              |0007: iget-object v2, v3, Lcom/example/frosttest/FrostTest;.a:Ljava/lang/String; // field@09c8
+098f62: 6e20 ac25 2100                         |0009: invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;.append:(Ljava/lang/String;)Ljava/lang/StringBuilder; // method@25ac
+098f68: 0c01                                   |000c: move-result-object v1
+098f6a: 6e10 b125 0100                         |000d: invoke-virtual {v1}, Ljava/lang/StringBuilder;.toString:()Ljava/lang/String; // method@25b1
+098f70: 0c01                                   |0010: move-result-object v1
+098f72: 7120 a321 1000                         |0011: invoke-static {v0, v1}, Landroid/util/Log;.i:(Ljava/lang/String;Ljava/lang/String;)I // method@21a3
+098f78: 0e00                                   |0014: return-void
+
+098f7c:                                        |[098f7c] com.example.frosttest.FrostTest.doSth4:()V
+098f8c: 1a00 b715                              |0000: const-string v0, &quot;frostpeng&quot; // string@15b7
+098f90: 5421 c809                              |0002: iget-object v1, v2, Lcom/example/frosttest/FrostTest;.a:Ljava/lang/String; // field@09c8
+098f94: 7110 a225 0100                         |0004: invoke-static {v1}, Ljava/lang/String;.valueOf:(Ljava/lang/Object;)Ljava/lang/String; // method@25a2
+098f9a: 0c01                                   |0007: move-result-object v1
+098f9c: 7120 a321 1000                         |0008: invoke-static {v0, v1}, Landroid/util/Log;.i:(Ljava/lang/String;Ljava/lang/String;)I // method@21a3
+098fa2: 0e00                                   |000b: return-void
+
+098fa4:                                        |[098fa4] com.example.frosttest.FrostTest.doSth5:()V
+098fb4: 1a00 b715                              |0000: const-string v0, &quot;frostpeng&quot; // string@15b7
+098fb8: 5221 c909                              |0002: iget v1, v2, Lcom/example/frosttest/FrostTest;.b:I // field@09c9
+098fbc: 7110 a125 0100                         |0004: invoke-static {v1}, Ljava/lang/String;.valueOf:(I)Ljava/lang/String; // method@25a1
+098fc2: 0c01                                   |0007: move-result-object v1
+098fc4: 7120 a321 1000                         |0008: invoke-static {v0, v1}, Landroid/util/Log;.i:(Ljava/lang/String;Ljava/lang/String;)I // method@21a3
+098fca: 0e00                                   |000b: return-void
+
+098fcc:                                        |[098fcc] com.example.frosttest.FrostTest.doSth6:()V
+098fdc: 1a00 b715                              |0000: const-string v0, &quot;frostpeng&quot; // string@15b7
+098fe0: 2201 2f05                              |0002: new-instance v1, Ljava/lang/StringBuilder; // type@052f
+098fe4: 5232 c909                              |0004: iget v2, v3, Lcom/example/frosttest/FrostTest;.b:I // field@09c9
+098fe8: 7110 a125 0200                         |0006: invoke-static {v2}, Ljava/lang/String;.valueOf:(I)Ljava/lang/String; // method@25a1
+098fee: 0c02                                   |0009: move-result-object v2
+098ff0: 7020 a525 2100                         |000a: invoke-direct {v1, v2}, Ljava/lang/StringBuilder;.&lt;init&gt;:(Ljava/lang/String;)V // method@25a5
+098ff6: 6e10 b125 0100                         |000d: invoke-virtual {v1}, Ljava/lang/StringBuilder;.toString:()Ljava/lang/String; // method@25b1
+098ffc: 0c01                                   |0010: move-result-object v1
+098ffe: 7120 a321 1000                         |0011: invoke-static {v0, v1}, Landroid/util/Log;.i:(Ljava/lang/String;Ljava/lang/String;)I // method@21a3
+099004: 0e00                                   |0014: return-void
+
+099008:                                        |[099008] com.example.frosttest.FrostTest.doSth7:()V
+099018: 1a00 b715                              |0000: const-string v0, &quot;frostpeng&quot; // string@15b7
+09901c: 2201 2f05                              |0002: new-instance v1, Ljava/lang/StringBuilder; // type@052f
+099020: 7010 a325 0100                         |0004: invoke-direct {v1}, Ljava/lang/StringBuilder;.&lt;init&gt;:()V // method@25a3
+099026: 5232 c909                              |0007: iget v2, v3, Lcom/example/frosttest/FrostTest;.b:I // field@09c9
+09902a: 6e20 a825 2100                         |0009: invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;.append:(I)Ljava/lang/StringBuilder; // method@25a8
+099030: 0c01                                   |000c: move-result-object v1
+099032: 6e10 b125 0100                         |000d: invoke-virtual {v1}, Ljava/lang/StringBuilder;.toString:()Ljava/lang/String; // method@25b1
+099038: 0c01                                   |0010: move-result-object v1
+09903a: 7120 a321 1000                         |0011: invoke-static {v0, v1}, Landroid/util/Log;.i:(Ljava/lang/String;Ljava/lang/String;)I // method@21a3
+099040: 0e00                                   |0014: return-void
+</code></pre><p>从示例中可以看出各类字符串拼接方式的优劣，如果用String.valueOf()绝对是最优方案。只是通过对“变量+”””和“””+变量”的形式在手q整个项目调整以后大概能够优化6k左右,如果只是优化qzone部分，效果比较微小，脚本方面不太好过滤对应情况，暂时没有加入，只是做了下试验。<br>PS：其实“String +”一般来说比StringBuffer的拼接更费字节码，这个部分可以自行验证，前提是a+b+…的形式中首位a这个为变量，而不是常量，如果a是常量，则实际上和StringBuffer等同，这也是个优化点，具体可以参考文章 <a href="http://sunqi.iteye.com/blog/2273373" target="_blank" rel="noopener">从字节码视角看java字符串的拼接</a> 。</p>
+<h3 id="4、调整interface到class，减少实现接口造成的空方法"><a href="#4、调整interface到class，减少实现接口造成的空方法" class="headerlink" title="4、调整interface到class，减少实现接口造成的空方法"></a><strong>4、调整interface到class，减少实现接口造成的空方法</strong></h3><p>很多代码中实现接口时有很多的空方法，并没有作用但还是会占用字节码，希望能够通过调整对应的interface为class，去除冗余的空方法，减少字节码，从而减少包大小。<br>示例如下</p>
+<pre><code>public interface FrostInterface {
+public abstract void doSth1();
+public abstract void doSth2();
+public abstract void doSth3();
+}
+
+public class FrostTest1 implements FrostInterface{
+
+    @Override
+    public void doSth1() {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void doSth2() {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void doSth3() {
+        // TODO Auto-generated method stub
+
+    }
+}    
+</code></pre><p>改成</p>
+<pre><code>public abstract class FrostTest implements FrostInterface{
+
+@Override
+public void doSth1() {
+    // TODO Auto-generated method stub
+
+}
+
+@Override
+public void doSth2() {
+    // TODO Auto-generated method stub
+
+}
+
+@Override
+public void doSth3() {
+    // TODO Auto-generated method stub
+
+}
+
+}
+
+public class FrostTest1 extends FrostTest{
+
+}
+</code></pre><p>该方案的缺点在于修改必须手动，难度大，qzone中场景不足以引起量变，而且因为Qzone中<init>中还加入了插桩函数的负担，所以整体优化效果不佳，优化完qzone才2k不到的大小缩减，优化难度高收益小，弃坑。</init></p>
+<p>后续应该还会有一些别的减包思路提出来，希望能够给一起在减包路上踩坑的朋友们一些帮助吧。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <time datetime="2015-12-24T11:11:12.000Z"><a href="/2015/12/24/内存泄漏/leakcanary/">2015-12-24</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/12/24/内存泄漏/leakcanary/">LeakCanary分析详解</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>内存泄露是Android开发过程中非常常见的问题，指的是进程中某些已经完成使命的垃圾对象始终占据着内存空间，直接或间接保持对GCROOTS的引用，导致无法被GC回收。对于Android系统而言，因为Android每个进程有自己的内存上限，当app使用内存超过可申请的内存时，就会出现Out Of Memory的错误。如果应用存在内存泄露，出现OOM，很难从堆栈中直接分析出问题原因。<br>对于Android应用内存泄露的检测，通常处理的情况是：</p>
+<ol>
+<li>通过统计平台发现相关的OOM问题上报；</li>
+<li>重现内存泄露问题<strong>（本步骤最需要花大量的时间和人力）</strong>，并记录堆栈信息并dump内存得到相关的hprof文件；</li>
+<li>用MAT等工具的方式来分析查找到泄露对象以及到GC ROOTS的最短强引用路径；</li>
+<li>修复问题。</li>
+</ol>
+<p>内存泄露的原因可能有很多种情况，比如非静态内部类的静态实例、内部类handler消息传递、注册某个对象后未反注册、集合中对象没及时清理、资源对象未关闭、图片读取、Adapter未缓存View等。对此按照上述的人工排查的方式来处理往往需要的时间和人力很大，本文主要是介绍Square公司推出的LeakCanary,介绍其使用和相关原理。</p>
+<h2 id="LeakCanary的使用"><a href="#LeakCanary的使用" class="headerlink" title="LeakCanary的使用"></a>LeakCanary的使用</h2><p>LeakCanary的源工程地址为<a href="https://github.com/square/leakcanary" target="_blank" rel="noopener">https://github.com/square/leakcanary</a>。</p>
+<h3 id="1-接入项目依赖"><a href="#1-接入项目依赖" class="headerlink" title="1.接入项目依赖"></a>1.接入项目依赖</h3><ul>
+<li><p>在Android Studio中使用（<strong>添加Gradle依赖</strong>）</p>
+<p>  通过debugCompile和releaseCompile来控制debug和release版本，release版本大家肯定不希望还带有自动内存监测的入口。</p>
+</li>
+</ul>
+<pre><code>dependencies {
+debugCompile &apos;com.squareup.leakcanary:leakcanary-android:1.3.1&apos;
+releaseCompile ‘com.squareup.leakcanary:leakcanary-android-no-op:1.3.1&apos;
+}
+</code></pre><ul>
+<li><p>在Eclipse 中使用（<strong>作为Library依赖</strong>）</p>
+<p>  LeakCanary项目默认没有提供Eclipse的依赖方式，相关开源工程地址为<a href="https://github.com/teffy/LeakcanarySample-Eclipse" target="_blank" rel="noopener">https://github.com/teffy/LeakcanarySample-Eclipse</a>。</p>
+<pre><code>android.library.reference.1=../leakcanarylib 
+</code></pre><p>   <strong>PS：</strong>对于某些特殊的工程，不便于添加依赖工程并且也不是gradle构建的项目，可以将相关的java文件和res文件拷贝到对应的资源目录，并且在AndroidManifest添加下列代码也可以接入LeakCanary。</p>
+<pre><code> &lt;service android:name=&quot;com.squareup.leakcanary.internal.HeapAnalyzerService&quot;
+    android:enabled=&quot;false&quot;
+    android:process=&quot;:leakcanary&quot; /&gt;
+&lt;service android:name=&quot;com.squareup.leakcanary.DisplayLeakService&quot;
+    android:enabled=&quot;false&quot; /&gt;
+&lt;activity
+    android:name=&quot;com.squareup.leakcanary.internal.DisplayLeakActivity&quot;
+    android:enabled=&quot;false&quot;
+    android:icon=&quot;@drawable/__leak_canary_icon&quot;
+    android:label=&quot;@string/__leak_canary_display_activity_label&quot;
+    android:taskAffinity=&quot;com.squareup.leakcanary&quot;
+    android:theme=&quot;@style/__LeakCanary.Base&quot; &gt;
+    &lt;intent-filter&gt;
+        &lt;action android:name=&quot;android.intent.action.MAIN&quot; /&gt;
+        &lt;category android:name=&quot;android.intent.category.LAUNCHER&quot; /&gt;
+    &lt;/intent-filter&gt;
+&lt;/activity&gt;
+</code></pre></li>
+</ul>
+<h3 id="2-加入检测代码"><a href="#2-加入检测代码" class="headerlink" title="2. 加入检测代码"></a>2. 加入检测代码</h3><ul>
+<li><p>监听可能泄露的对象(<strong>添加RefWatcher来watch对象</strong>)</p>
+<pre><code>RefWatcher refWatcher = {...};
+refWatcher.watch(badObject);//监听本该被gc的对象
+</code></pre></li>
+<li><p>对于Android 4.0以上版本的Activity监听(<strong>LeakCanary.install(Application)</strong>)</p>
+<pre><code>public class ExampleApplication extends Application {
+    public static RefWatcher getRefWatcher(Context context) {
+        ExampleApplication application = (ExampleApplication)context.getApplicationContext();
+        return application.refWatcher;
+    }
+    private RefWatcher refWatcher;
+    @Override public void onCreate() {
+        super.onCreate();
+        refWatcher = LeakCanary.install(this);
+    }
+}
+</code></pre></li>
+<li><p>对于Fragment和Android 4.0以下的Activity监听(<strong>基类OnDestory加入watch</strong>)</p>
+<pre><code>//在Activity和Fragment的基类的onDestory中添加watch
+public abstract class BaseFragment extends Fragment {
+    @Override public void onDestroy() {
+    super.onDestroy();
+        RefWatcher refWatcher = ExampleApplication.getRefWatcher(getActivity());
+        refWatcher.watch(this);
+    }
+}
+</code></pre></li>
+</ul>
+<h3 id="3-一般的输出结果"><a href="#3-一般的输出结果" class="headerlink" title="3. 一般的输出结果"></a>3. 一般的输出结果</h3><p><img src="/2015/12/24/内存泄漏/leakcanary/leaktrace.png" alt="输出结果" title="输出结果"></p>
+<p>当发生泄漏时，系统通知栏会弹窗如图左上角所示。并且会在应用中出现一个leaks的入口，点击进去会出现泄露路径相关描述。通过右上角的button可以分享相关的leakInfo以及对应的dump出来的hprof文件。对于hprof文件，可以通过分析其中的KeyedWeakReference的引用（稍后会在原理处说明做法的原因），即可得到内存泄露发生时检测的对象，能够比较快的定位问题。</p>
+<h3 id="4-自定义泄露处理流程"><a href="#4-自定义泄露处理流程" class="headerlink" title="4. 自定义泄露处理流程"></a>4. 自定义泄露处理流程</h3><pre><code>public class LeakUploadService extends DisplayLeakService {
+    @Override
+    protected void afterDefaultHandling(HeapDump heapDump,AnalysisResult result, String leakInfo) {
+        if (!result.leakFound || result.excludedLeak) {
+          return;
+        } 
+        //可以做相关处理，比如上传云服务器
+        }
+    }
+    public class ExampleApplication extends Application
+    {
+        protected RefWatcher installLeakCanary() {
+        return LeakCanary.install(app, LeakUploadService.class);
+    }
+}
+</code></pre><h3 id="5-自定义忽略的泄露"><a href="#5-自定义忽略的泄露" class="headerlink" title="5. 自定义忽略的泄露"></a>5. 自定义忽略的泄露</h3><ul>
+<li><p>忽略泄露的类</p>
+<pre><code>//忽略com.example.Exampleclass的exampleField的泄露
+public class ExampleApplication extends Application {
+    protected RefWatcher installLeakCanary() {
+        ExcludedRefs excludedRefs = AndroidExcludedRefs.createAppDefaults()
+        .instanceField(&quot;com.example.ExampleClass&quot;, &quot;exampleField&quot;)
+        .build();
+        return LeakCanary.install(this, DisplayLeakService.class, excludedRefs);
+    }
+}
+</code></pre></li>
+<li><p>忽略需要监听的Activity</p>
+<pre><code>//不用监听NoLeakActivity
+Public class ExampleApplication extends Application {
+    protected RefWatcher installLeakCanary() {
+        final RefWatcher refWatcher = androidWatcher(application);
+        registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {
+        public void onActivityDestroyed(Activity activity) {
+          if (activity instanceof  NoLeakActivity) {
+              return;
+          }
+          refWatcher.watch(activity);
+        }
+        // ...
+        });
+        return refWatcher;
+    }
+}
+</code></pre></li>
+</ul>
+<h2 id="LeakCanary自动检测原理"><a href="#LeakCanary自动检测原理" class="headerlink" title="LeakCanary自动检测原理"></a>LeakCanary自动检测原理</h2><ul>
+<li>LeakCanary.install(application)通过registerActivityLifecycleCallbacks在Activity的onDestory中加入RefWatcher监听Activity。</li>
+<li>RefWatcher.watch() 创建一个 KeyedWeakReference 到要被监控的对象。</li>
+<li>然后在后台线程检查引用是否被清除，如果没有，调用GC。如果引用还是未被清除，把 heap 内存 dump 到 APP 对应的文件系统中的一个 .hprof 文件中。</li>
+<li>在另外一个进程中的 HeapAnalyzerService 有一个 HeapAnalyzer解析这个文件。</li>
+<li>得益于唯一的 reference key, HeapAnalyzer 找到 KeyedWeakReference，定位内存泄露。</li>
+<li>HeapAnalyzer 计算 到 GC roots 的最短强引用路径，并确定是否是泄露(如果是已知系统级泄漏，会自动忽略掉)。如果是的话，建立导致泄露的引用链。（过滤已知泄漏）</li>
+<li>引用链传递到 APP 进程中的 DisplayLeakService， 并以通知的形式展示出来或者自行处理结果。</li>
+</ul>
+<h2 id="LeakCanary代码结构"><a href="#LeakCanary代码结构" class="headerlink" title="LeakCanary代码结构"></a>LeakCanary代码结构</h2><pre><code>--leakcanary     
+    --leakcanary-analyzer         hprof文件分析模块
+          --HeapAnalyzer          利用HAHA和ShortestPathFinder分析内存泄露是否误报
+          --ShortestPathFinder    查找泄露对象到GC ROOTS的最短强引用路径
+    --leakcanary-android          Android使用模块
+          --LeakCanary            入口类
+          --ActivityRefWatcher    对于4.0以上监听Activity Destroy，加入监听
+          --AndroidExcludedRefs   判断泄露是否应该忽略
+          --AndroidWatchExecutor  在主线程空闲时，将检测任务抛入Thread处理
+          --HeapAnalyzerService   分析hprof 
+          --DisplayLeakService    展示分析结果
+          --DisplayLeakActivity   分析结果显示界面
+     --leakcanary-watcher         检测模块
+          --RefWatcher            通过弱引用队列分析是否泄露，二次确认
+          --GcTrigger             若发现没有释放，触发gc
+</code></pre><h2 id="LeackCanary源码分析"><a href="#LeackCanary源码分析" class="headerlink" title="LeackCanary源码分析"></a>LeackCanary源码分析</h2><p>LeakCanary的整个库相对比较复杂，包含了泄漏的监测和相关泄漏dump出来的的hprof分析。源码分析主要包含六个主要的关键源码：</p>
+<ul>
+<li><p><a href="https://github.com/square/leakcanary/blob/master/leakcanary-android/src/main/java/com/squareup/leakcanary/ActivityRefWatcher.java" target="_blank" rel="noopener">ActivityRefWatcher</a></p>
+<p>  通过registerActivityLifecycleCallbacks在Activity的onDestory中加入监听流程（只支持Android 4.0以上）。</p>
+<pre><code>private final Application.ActivityLifecycleCallbacks lifecycleCallbacks =
+new Application.ActivityLifecycleCallbacks() {
+    @Override public void onActivityDestroyed(Activity activity) {
+        refWatcher.watch(activity);
+    }
+};
+</code></pre></li>
+<li><p><a href="https://github.com/square/leakcanary/blob/master/leakcanary-watcher/src/main/java/com/squareup/leakcanary/RefWatcher.java" target="_blank" rel="noopener">RefWatcher</a></p>
+<p>  创建KeyedWeakReference并通过AndroidWatchExecutor（主要是为了确保在主线程空闲的时候进行检测）执行监听流程。</p>
+<pre><code>public void watch(Object watchedReference, String referenceName) {
+    checkNotNull(watchedReference, &quot;watchedReference&quot;);
+    checkNotNull(referenceName, &quot;referenceName&quot;);
+    if (debuggerControl.isDebuggerAttached()) {
+      return;
+    }
+    final long watchStartNanoTime = System.nanoTime();
+    String key = UUID.randomUUID().toString();
+    retainedKeys.add(key);
+    final KeyedWeakReference reference =
+        new KeyedWeakReference(watchedReference, key, referenceName, queue);
+    watchExecutor.execute(new Runnable() {
+      @Override public void run() {
+        ensureGone(reference, watchStartNanoTime);
+      }
+    });
+  }
+</code></pre><p>判断对象是否引用消除主要是通过判断retainedKeys中是否存在对应KeyedWeakReference的key。<br>监听流程主要是先移除回收队列中存在的相关的key，确认是否引用消除，没有则进行<code>gcTrigger.runGc()</code>来gc，再次移除回收队列中存在的相关的key，如果引用仍未清除，则判断内存泄漏。</p>
+<pre><code>void ensureGone(KeyedWeakReference reference, long watchStartNanoTime) {
+  long gcStartNanoTime = System.nanoTime();
+  removeWeaklyReachableReferences();
+  if (gone(reference) || debuggerControl.isDebuggerAttached()) {
+    return;
+  }
+  gcTrigger.runGc();
+  removeWeaklyReachableReferences();
+  if (!gone(reference)) {
+    //dump内存并作相关处理
+  }
+}
+
+private void removeWeaklyReachableReferences() {
+  KeyedWeakReference ref;
+  while ((ref = (KeyedWeakReference) queue.poll()) != null) {
+    retainedKeys.remove(ref.key);
+  }
+}
+</code></pre></li>
+<li><p><a href="https://github.com/square/leakcanary/blob/master/leakcanary-android/src/main/java/com/squareup/leakcanary/AndroidWatchExecutor.java" target="_blank" rel="noopener">AndroidWatchExecutor</a></p>
+<p>  AndroidWatchExecutor是为了保证监听流程的执行是在主线程空闲的时候进行检测。</p>
+<pre><code>@Override public void execute(final Runnable command) {
+    if (isOnMainThread()) {
+      executeDelayedAfterIdleUnsafe(command);
+    } else {
+      mainHandler.post(new Runnable() {
+        @Override public void run() {
+          executeDelayedAfterIdleUnsafe(command);
+        }
+      });
+    }
+  }
+
+  private boolean isOnMainThread() {
+    return Looper.getMainLooper().getThread() == Thread.currentThread();
+  }
+
+  private void executeDelayedAfterIdleUnsafe(final Runnable runnable) {
+    Looper.myQueue().addIdleHandler(new MessageQueue.IdleHandler() {
+      @Override public boolean queueIdle() {
+        backgroundHandler.postDelayed(runnable, 5000);
+        return false;
+      }
+    });
+  }
+</code></pre><p>  保证在主线程空闲的时候检测的主要原因是因为leakcanary检测过程中一旦发现疑似泄漏就会dumphprof并进行分析，虽然dump的过程在后台线程，但是dumphprof一定会执行到对应的dump.cc，执行dumpHeap时所有的线程都会暂停，会造成突然卡顿；所以需要在主线程空闲的时候才进行检测。</p>
+<pre><code>void DumpHeap(const char* filename, int fd, bool direct_to_ddms) {
+    CHECK(filename != NULL);
+    Runtime::Current()-&gt;GetThreadList()-&gt;SuspendAll();
+    Hprof hprof(filename, fd, direct_to_ddms);
+    hprof.Dump();
+    Runtime::Current()-&gt;GetThreadList()-&gt;ResumeAll();
+}
+</code></pre></li>
+</ul>
+<ul>
+<li><p><a href="https://github.com/square/leakcanary/blob/master/leakcanary-watcher/src/main/java/com/squareup/leakcanary/GcTrigger.java" target="_blank" rel="noopener">GcTrigger</a></p>
+<p>  GCTrigger主要是执行GC并且wait 100毫秒，这个设定参考自<a href="https://android.googlesource.com/platform/libcore/+/master/support/src/test/java/libcore/java/lang/ref/FinalizationTester.java" title="FinalizationTest" target="_blank" rel="noopener">FinalizationTest</a>。</p>
+<pre><code>GcTrigger DEFAULT = new GcTrigger() {
+  @Override public void runGc() {
+    Runtime.getRuntime().gc();
+    enqueueReferences();
+    System.runFinalization();
+  }
+
+  private void enqueueReferences() {
+    try {
+      Thread.sleep(100);
+    } catch (InterruptedException e) {
+      throw new AssertionError();
+    }
+  }
+};
+</code></pre><p>  其中使用Runtime.getRuntime().gc()比System.gc()更能保证GC执行，在Android 5.0以下的源码中，System.gc()</p>
+<pre><code>public static void gc() {
+    Runtime.getRuntime().gc();
+}
+</code></pre><p>  Android 5.0以上系统中：</p>
+<pre><code>public static void gc() {
+    boolean shouldRunGC;
+    synchronized(lock) {
+        shouldRunGC = justRanFinalization;
+        if (shouldRunGC) {
+            justRanFinalization = false;
+        } else {
+            runGC = true;
+        }
+    }
+    if (shouldRunGC) {
+        Runtime.getRuntime().gc();
+    }
+}
+</code></pre></li>
+<li><p><a href="https://github.com/square/leakcanary/blob/master/leakcanary-android/src/main/java/com/squareup/leakcanary/AndroidExcludedRefs.java" target="_blank" rel="noopener">AndroidExcludedRefs</a><br>  主要用于处理一些系统带来的误报泄漏，原则上是在对应版本忽略相关的泄漏。例如：</p>
+<pre><code>ACTIVITY_CLIENT_RECORD__NEXT_IDLE(SDK_INT &gt;= KITKAT &amp;&amp; SDK_INT &lt;= LOLLIPOP) {
+@Override void add(ExcludedRefs.Builder excluded) {
+  // Android AOSP sometimes keeps a reference to a destroyed activity as a &quot;nextIdle&quot; client
+  // record in the android.app.ActivityThread.mActivities map.
+  // Not sure what&apos;s going on there, input welcome.
+  excluded.instanceField(&quot;android.app.ActivityThread$ActivityClientRecord&quot;, &quot;nextIdle&quot;);
+}
+  }
+</code></pre></li>
+<li><p><a href="https://github.com/square/leakcanary/blob/master/leakcanary-analyzer/src/main/java/com/squareup/leakcanary/ShortestPathFinder.java" target="_blank" rel="noopener">ShortestPathFinder</a><br>  寻找泄漏的最短强引用路径，算法类似于广度优先搜索算法，先找到对应的GCROOTS，压入队列中，依次遍历子节点并加入队列中，直到找到对应的泄漏，即可确定泄漏最短强引用路径，顺带可以返回对应泄漏是否是系统已知。</p>
+<pre><code>Result findPath(Snapshot snapshot, Instance leakingRef) {
+    clearState();
+    canIgnoreStrings = !isString(leakingRef);
+    enqueueGcRoots(snapshot);
+    boolean excludingKnownLeaks = false;
+    LeakNode leakingNode = null;
+    while (!toVisitQueue.isEmpty() || !toVisitIfNoPathQueue.isEmpty()) {
+      LeakNode node;
+      if (!toVisitQueue.isEmpty()) {
+        node = toVisitQueue.poll();
+      } else {
+        node = toVisitIfNoPathQueue.poll();
+        excludingKnownLeaks = true;
+      }
+      if (node.instance == leakingRef) {
+        leakingNode = node;
+        break;
+      }
+      if (checkSeen(node)) {
+        continue;
+      }
+      if (node.instance instanceof RootObj) {
+        visitRootObj(node);
+      } else if (node.instance instanceof ClassObj) {
+        visitClassObj(node);
+      } else if (node.instance instanceof ClassInstance) {
+        visitClassInstance(node);
+      } else if (node.instance instanceof ArrayInstance) {
+        visitArrayInstance(node);
+      } else {
+        throw new IllegalStateException(&quot;Unexpected type for &quot; + node.instance);
+      }
+    }
+    return new Result(leakingNode, excludingKnownLeaks);
+  }
+</code></pre></li>
+</ul>
+<h2 id="综合比较"><a href="#综合比较" class="headerlink" title="综合比较"></a>综合比较</h2><table>
+<thead>
+<tr>
+<th>总结</th>
+<th>LeakCanary</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Acvitiy泄漏</td>
+<td>Android 4.0以上</td>
+</tr>
+<tr>
+<td>自定义对象检测</td>
+<td>支持</td>
+</tr>
+<tr>
+<td>泄漏时提醒</td>
+<td>支持</td>
+</tr>
+<tr>
+<td>自动Dump</td>
+<td>支持</td>
+</tr>
+<tr>
+<td>LeakCanary优势</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Dump分析</td>
+<td>支持，能够根据KeyedWeakReference</td>
+</tr>
+<tr>
+<td>显示泄漏路径</td>
+<td>显示十分详细</td>
+</tr>
+<tr>
+<td>劣势</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>白名单设置</td>
+<td>源码写死</td>
+</tr>
+<tr>
+<td>配合自动化</td>
+<td>不支持</td>
+</tr>
+<tr>
+<td>自动Fix系统泄漏</td>
+<td>不支持，只能忽略</td>
+</tr>
+</tbody>
+</table>
+<p>对于LeakCanary，泄漏问题的定位更加清晰，对于的dump文件也相对容易找到泄漏，但是如果需要非常自动化的用于自己的项目中，还需要比较大的改造。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+
+
+
+<ul class="page-direction" id="page-direction">
+    <li><a class="page-prev" href="javascript:;" title="上一页">
+      <span class="icon-stack">
+        <i class="icon-circle icon-stack-base"></i>
+        <i class="icon-angle-left"></i>
+      </span>
+    <li><a class="page-next" href="javascript:;" title="下一页">
+      <span class="icon-stack">
+        <i class="icon-circle icon-stack-base"></i>
+        <i class="icon-angle-right"></i>
+      </span>
+    </a></li>
+</a></li></ul>
+
+<nav id="pagination">
+  
+  
+  <div class="clearfix"></div>
+</nav></div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="text" name="q" results="0" placeholder="搜一下">
+    <i class="icon-search"></i>
+    <input type="hidden" name="q" value="site:frostpeng.github.io">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">标签</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/android/">android</a><small>3</small></li>
+  
+    <li><a href="/tags/ffmpeg/">ffmpeg</a><small>2</small></li>
+  
+    <li><a href="/tags/http2-0/">http2.0</a><small>1</small></li>
+  
+    <li><a href="/tags/减包/">减包</a><small>2</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">分类</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/tech/">tech</a><small>6</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">最新文章</h3>
+  <ul class="entry">
+    
+      <li>
+        <a href="/2018/12/01/ffmpeg/《ffmpeg从入门到精通》关键点/">《ffmpeg从入门到精通》关键点</a>
+      </li>
+    
+      <li>
+        <a href="/2018/12/01/http/http2.0改造/">图片下载支持http2.0改造方案关键点</a>
+      </li>
+    
+      <li>
+        <a href="/2018/11/05/ffmpeg/音视频编码基础和ffmpeg/">音视频编码基础和ffmpeg</a>
+      </li>
+    
+      <li>
+        <a href="/2016/05/08/减包/利用Eclipse JDT减少方法数和包大小/">利用Eclipse JDT减少方法数和包大小</a>
+      </li>
+    
+      <li>
+        <a href="/2016/05/02/减包/分析Dalvik字节码进行减包优化/">分析Dalvik字节码进行减包优化</a>
+      </li>
+    
+      <li>
+        <a href="/2015/12/24/内存泄漏/leakcanary/">LeakCanary分析详解</a>
+      </li>
+    
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <div id="go-pg-top"><i class="icon-arrow-up"></i></div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2018 frostpeng
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.2.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/page.js"></script>
+
+
+</body>
+
+</html>
